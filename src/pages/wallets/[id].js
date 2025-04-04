@@ -12,6 +12,8 @@ export default function WalletDetail() {
   const [assets, setAssets] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
+  
+  // Transaction form state
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
     asset_id: '',
@@ -20,6 +22,17 @@ export default function WalletDetail() {
     price_per_unit: '',
     transaction_date: new Date().toISOString().split('T')[0],
     notes: ''
+  });
+  
+  // Asset form state
+  const [showAssetForm, setShowAssetForm] = useState(false);
+  const [editingAsset, setEditingAsset] = useState(null);
+  const [assetFormData, setAssetFormData] = useState({
+    asset_symbol: '',
+    name: '',
+    price_spot: '',
+    amount: '',
+    is_reference: false
   });
 
   useEffect(() => {
@@ -227,6 +240,173 @@ export default function WalletDetail() {
       alert('Unexpected error updating price');
     }
   }
+  
+  // Handle asset form change
+  function handleAssetFormChange(e) {
+    const { name, value, type } = e.target;
+    setAssetFormData(prev => ({
+      ...prev,
+      [name]: type === 'number' ? (value === '' ? '' : parseFloat(value)) : value
+    }));
+  }
+  
+  // Reset asset form
+  function resetAssetForm() {
+    setAssetFormData({
+      asset_symbol: '',
+      name: '',
+      price_spot: '',
+      amount: '',
+      is_reference: false
+    });
+    setShowAssetForm(false);
+    setEditingAsset(null);
+  }
+  
+  // Handle asset edit button click
+  function handleEditAsset(asset) {
+    setEditingAsset(asset);
+    setAssetFormData({
+      asset_symbol: asset.asset_symbol,
+      name: asset.name,
+      price_spot: asset.price_spot,
+      amount: asset.amount,
+      is_reference: asset.is_reference
+    });
+    setShowAssetForm(true);
+  }
+  
+  // Handle asset form submission (create or update)
+  async function handleAssetSubmit(e) {
+    e.preventDefault();
+    
+    try {
+      if (editingAsset) {
+        // Update existing asset
+        console.log('Updating asset:', editingAsset.id, assetFormData);
+        
+        const { error } = await supabase
+          .from('assets')
+          .update({
+            asset_symbol: assetFormData.asset_symbol.toUpperCase(),
+            name: assetFormData.name,
+            price_spot: assetFormData.price_spot,
+            amount: assetFormData.amount,
+            is_reference: assetFormData.is_reference,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', editingAsset.id);
+          
+        if (error) {
+          console.error('Error updating asset:', error);
+          alert(`Error updating asset: ${error.message}`);
+          return;
+        }
+        
+        alert('Asset updated successfully!');
+      } else {
+        // Check if asset with same symbol already exists in this wallet
+        const { data: existingAssets, error: checkError } = await supabase
+          .from('assets')
+          .select('id')
+          .eq('wallet_id', id)
+          .eq('asset_symbol', assetFormData.asset_symbol.toUpperCase());
+          
+        if (checkError) {
+          console.error('Error checking existing assets:', checkError);
+          alert(`Error: ${checkError.message}`);
+          return;
+        }
+        
+        if (existingAssets && existingAssets.length > 0) {
+          alert(`An asset with symbol "${assetFormData.asset_symbol.toUpperCase()}" already exists in this wallet.`);
+          return;
+        }
+        
+        // Create new asset
+        console.log('Creating new asset:', {
+          wallet_id: id,
+          ...assetFormData
+        });
+        
+        const { error } = await supabase
+          .from('assets')
+          .insert([{
+            wallet_id: id,
+            asset_symbol: assetFormData.asset_symbol.toUpperCase(),
+            name: assetFormData.name,
+            price_spot: assetFormData.price_spot,
+            amount: assetFormData.amount,
+            is_reference: assetFormData.is_reference,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }]);
+          
+        if (error) {
+          console.error('Error creating asset:', error);
+          alert(`Error creating asset: ${error.message}`);
+          return;
+        }
+        
+        alert('Asset created successfully!');
+      }
+      
+      // Reset form and refresh assets
+      resetAssetForm();
+      fetchAssets();
+      
+    } catch (error) {
+      console.error('Error in asset form submission:', error);
+      alert(`Unexpected error: ${error.message}`);
+    }
+  }
+  
+  // Handle asset deletion
+  async function handleDeleteAsset(assetId) {
+    // First check if this asset has any transactions
+    const { data: assetTransactions, error: txCheckError } = await supabase
+      .from('transactions')
+      .select('id')
+      .eq('asset_id', assetId);
+      
+    if (txCheckError) {
+      console.error('Error checking transactions:', txCheckError);
+      alert(`Error: ${txCheckError.message}`);
+      return;
+    }
+    
+    if (assetTransactions && assetTransactions.length > 0) {
+      if (!confirm(`This asset has ${assetTransactions.length} transactions. Deleting it will also delete all associated transactions. Are you sure?`)) {
+        return;
+      }
+    } else {
+      if (!confirm('Are you sure you want to delete this asset?')) {
+        return;
+      }
+    }
+    
+    try {
+      // Delete the asset (cascade will delete transactions)
+      const { error } = await supabase
+        .from('assets')
+        .delete()
+        .eq('id', assetId);
+        
+      if (error) {
+        console.error('Error deleting asset:', error);
+        alert(`Error deleting asset: ${error.message}`);
+        return;
+      }
+      
+      alert('Asset and its transactions deleted successfully!');
+      fetchAssets();
+      fetchTransactions();
+      
+    } catch (error) {
+      console.error('Error deleting asset:', error);
+      alert(`Unexpected error: ${error.message}`);
+    }
+  }
 
   async function handleDelete(id) {
     if (confirm('Are you sure you want to delete this transaction?')) {
@@ -318,7 +498,108 @@ export default function WalletDetail() {
           marginTop: 'var(--spacing-lg)',
           marginBottom: 'var(--spacing-lg)'
         }}>
-          <h2 className="mb-2">Assets</h2>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-md)' }}>
+            <h2 className="mb-2">Assets</h2>
+            <button onClick={() => setShowAssetForm(!showAssetForm)}>
+              {showAssetForm ? 'Cancel' : '+ Add Asset'}
+            </button>
+          </div>
+          
+          {/* Add/Edit Asset Form */}
+          {showAssetForm && (
+            <form onSubmit={handleAssetSubmit} className="card mb-3">
+              <div className="grid grid-2">
+                <div className="form-group">
+                  <label className="form-label" htmlFor="asset_symbol">Symbol</label>
+                  <input
+                    type="text"
+                    id="asset_symbol"
+                    name="asset_symbol"
+                    className="form-control"
+                    value={assetFormData.asset_symbol}
+                    onChange={handleAssetFormChange}
+                    required
+                    placeholder="BTC, ETH, etc."
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label" htmlFor="name">Name</label>
+                  <input
+                    type="text"
+                    id="name"
+                    name="name"
+                    className="form-control"
+                    value={assetFormData.name}
+                    onChange={handleAssetFormChange}
+                    required
+                    placeholder="Bitcoin, Ethereum, etc."
+                  />
+                </div>
+              </div>
+              
+              <div className="grid grid-2">
+                <div className="form-group">
+                  <label className="form-label" htmlFor="price_spot">Spot Price (USD)</label>
+                  <input
+                    type="number"
+                    id="price_spot"
+                    name="price_spot"
+                    className="form-control"
+                    value={assetFormData.price_spot}
+                    onChange={handleAssetFormChange}
+                    step="any"
+                    min="0"
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label" htmlFor="amount">Initial Amount</label>
+                  <input
+                    type="number"
+                    id="amount"
+                    name="amount"
+                    className="form-control"
+                    value={assetFormData.amount}
+                    onChange={handleAssetFormChange}
+                    step="any"
+                    min="0"
+                    required
+                  />
+                </div>
+              </div>
+              
+              <div className="form-group">
+                <label className="form-label" htmlFor="is_reference">
+                  <input
+                    type="checkbox"
+                    id="is_reference"
+                    name="is_reference"
+                    checked={assetFormData.is_reference}
+                    onChange={(e) => setAssetFormData(prev => ({ ...prev, is_reference: e.target.checked }))}
+                    style={{ marginRight: 'var(--spacing-sm)' }}
+                  />
+                  Reference Asset (e.g., stable currency)
+                </label>
+              </div>
+              
+              <button type="submit" className="success">
+                {editingAsset ? 'Update Asset' : 'Add Asset'}
+              </button>
+              {editingAsset && (
+                <button 
+                  type="button" 
+                  className="danger" 
+                  style={{ marginLeft: 'var(--spacing-md)' }}
+                  onClick={() => {
+                    setEditingAsset(null);
+                    resetAssetForm();
+                  }}
+                >
+                  Cancel Edit
+                </button>
+              )}
+            </form>
+          )}
           
           <div className="table-responsive">
             <table>
@@ -358,19 +639,36 @@ export default function WalletDetail() {
                     <td className="text-right">{asset.amount.toFixed(4)}</td>
                     <td className="text-right">${calculateTotalValue(asset.amount, asset.price_spot)}</td>
                     <td>
-                      <button
-                        style={{ padding: '0.25rem 0.5rem', fontSize: '0.9rem' }}
-                        onClick={() => {
-                          setFormData(prev => ({
-                            ...prev,
-                            asset_id: asset.id,
-                            price_per_unit: asset.price_spot
-                          }));
-                          setShowForm(true);
-                        }}
-                      >
-                        Add Transaction
-                      </button>
+                      <div style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
+                        <button
+                          style={{ padding: '0.25rem 0.5rem', fontSize: '0.9rem' }}
+                          onClick={() => {
+                            setFormData(prev => ({
+                              ...prev,
+                              asset_id: asset.id,
+                              price_per_unit: asset.price_spot
+                            }));
+                            setShowForm(true);
+                          }}
+                        >
+                          Transaction
+                        </button>
+                        <button
+                          style={{ padding: '0.25rem 0.5rem', fontSize: '0.9rem' }}
+                          onClick={() => handleEditAsset(asset)}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          className="danger"
+                          style={{ padding: '0.25rem 0.5rem', fontSize: '0.9rem' }}
+                          onClick={() => handleDeleteAsset(asset.id)}
+                          disabled={asset.is_reference} 
+                          title={asset.is_reference ? "Reference assets cannot be deleted" : ""}
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
