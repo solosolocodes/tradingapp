@@ -71,7 +71,7 @@ export default function CreateExperiment() {
   const [scenarios, setScenarios] = useState([
     { 
       title: 'Scenario 1', 
-      description: 'First scenario description',
+      description: '',
       duration: 300, // duration in seconds
       wallet_id: null,
       scenario_template_id: null,
@@ -221,6 +221,8 @@ export default function CreateExperiment() {
         title: `Scenario ${scenarios.length + 1}`,
         description: '',
         duration: 300,
+        scenario_template_id: null,
+        wallet_id: null,
         options: [
           { text: 'Option A', value: 'A' },
           { text: 'Option B', value: 'B' }
@@ -481,7 +483,7 @@ export default function CreateExperiment() {
         
         <form onSubmit={handleSubmit}>
           {/* Main experiment details */}
-          <div className="card" style={{ marginBottom: 'var(--spacing-md)' }}>
+          <div className="card" style={{ marginBottom: 'var(--spacing-md)', borderLeft: '4px solid #607d8b' }}>
             <h2>Experiment Details</h2>
             
             <div className="form-group">
@@ -526,7 +528,7 @@ export default function CreateExperiment() {
           </div>
           
           {/* Intro Screens */}
-          <div className="card" style={{ marginBottom: 'var(--spacing-md)' }}>
+          <div className="card" style={{ marginBottom: 'var(--spacing-md)', borderLeft: '4px solid #8bc34a' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-md)' }}>
               <h2>Intro Screens</h2>
               <button 
@@ -580,7 +582,7 @@ export default function CreateExperiment() {
           </div>
           
           {/* Scenarios */}
-          <div className="card" style={{ marginBottom: 'var(--spacing-md)' }}>
+          <div className="card" style={{ marginBottom: 'var(--spacing-md)', borderLeft: '4px solid var(--color-primary)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-md)' }}>
               <h2>Scenarios</h2>
               <button 
@@ -594,200 +596,73 @@ export default function CreateExperiment() {
             </div>
             
             {scenarios.map((scenario, scenarioIndex) => (
-              <div key={scenarioIndex} className="card" style={{ marginBottom: 'var(--spacing-md)', backgroundColor: 'var(--color-light)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 'var(--spacing-sm)' }}>
-                  <h3>Scenario {scenarioIndex + 1}</h3>
+              <div key={scenarioIndex} className="card" style={{ 
+                marginBottom: 'var(--spacing-sm)', 
+                backgroundColor: scenarioIndex % 2 === 0 ? 'var(--color-light)' : 'white',
+                padding: '12px',
+                borderLeft: '3px solid var(--color-primary)'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <h3 style={{ margin: 0, fontSize: '1rem' }}>Scenario {scenarioIndex + 1}</h3>
                   <button 
                     type="button" 
                     onClick={() => removeScenario(scenarioIndex)}
                     className="button danger"
-                    style={{ padding: '3px 8px', fontSize: '0.8rem' }}
+                    style={{ padding: '2px 6px', fontSize: '0.75rem' }}
                     disabled={scenarios.length === 1}
                   >
                     Remove
                   </button>
                 </div>
                 
-                <div className="form-group">
-                  <label className="form-label">Select Scenario Template</label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '8px' }}>
                   <select
                     className="form-control"
                     value={scenario.scenario_template_id || ''}
                     onChange={(e) => handleScenarioTemplateChange(scenarioIndex, e.target.value)}
+                    style={{ fontWeight: 'bold' }}
+                    required
                   >
-                    <option value="">-- Create custom scenario --</option>
+                    <option value="">-- Select Scenario Template --</option>
                     {availableScenarios.map(template => (
                       <option key={template.id} value={template.id}>
                         {template.title}
                       </option>
                     ))}
                   </select>
-                  
-                  {scenario.scenario_template_id && (
-                    <div style={{ 
-                      marginTop: '5px', 
-                      padding: '8px', 
-                      backgroundColor: 'var(--color-light)', 
-                      borderRadius: 'var(--border-radius)',
-                      fontSize: '0.85rem'
-                    }}>
-                      {availableScenarios.find(t => t.id === scenario.scenario_template_id)?.description || ''}
+                </div>
+                
+                {scenario.scenario_template_id && (
+                  <div style={{ 
+                    marginTop: '8px',
+                    display: 'grid', 
+                    gridTemplateColumns: '1fr 1fr', 
+                    gap: '8px',
+                    fontSize: '0.8rem',
+                    backgroundColor: 'rgba(0,0,0,0.03)',
+                    padding: '6px',
+                    borderRadius: '4px'
+                  }}>
+                    <div>
+                      <div><strong>Duration:</strong> {scenario.duration || 0} sec</div>
+                      <div><strong>Wallet:</strong> {availableWallets.find(w => w.id === scenario.wallet_id)?.name || 'None'}</div>
                     </div>
-                  )}
-                </div>
-                
-                <div className="form-group">
-                  <label className="form-label">Title</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    value={scenario.title}
-                    onChange={(e) => handleScenarioChange(scenarioIndex, 'title', e.target.value)}
-                    required
-                    disabled={scenario.scenario_template_id !== null}
-                  />
-                </div>
-                
-                <div className="form-group">
-                  <label className="form-label">Description</label>
-                  <textarea
-                    className="form-control"
-                    value={scenario.description}
-                    onChange={(e) => handleScenarioChange(scenarioIndex, 'description', e.target.value)}
-                    rows="3"
-                    required
-                    disabled={scenario.scenario_template_id !== null}
-                  />
-                </div>
-                
-                <div className="form-group">
-                  <label className="form-label">Duration (seconds)</label>
-                  <input
-                    type="number"
-                    className="form-control"
-                    value={scenario.duration}
-                    onChange={(e) => handleScenarioChange(scenarioIndex, 'duration', parseInt(e.target.value, 10))}
-                    min="1"
-                    required
-                    disabled={scenario.scenario_template_id !== null}
-                  />
-                </div>
-                
-                <div className="form-group">
-                  <label className="form-label">Wallet</label>
-                  {scenario.scenario_template_id ? (
-                    <input
-                      type="text"
-                      className="form-control"
-                      value={availableWallets.find(w => w.id === scenario.wallet_id)?.name || 'None'}
-                      disabled
-                    />
-                  ) : (
-                    <select
-                      className="form-control"
-                      value={scenario.wallet_id || ''}
-                      onChange={(e) => handleScenarioWalletChange(scenarioIndex, e.target.value)}
-                    >
-                      <option value="">-- No wallet assigned --</option>
-                      {availableWallets.map(wallet => (
-                        <option key={wallet.id} value={wallet.id}>
-                          {wallet.name}
-                        </option>
-                      ))}
-                    </select>
-                  )}
-                </div>
-                
-                <div className="form-group">
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-sm)' }}>
-                    <label className="form-label" style={{ marginBottom: 0 }}>Options</label>
-                    {!scenario.scenario_template_id && (
-                      <button 
-                        type="button" 
-                        className="button success" 
-                        onClick={() => addScenarioOption(scenarioIndex)}
-                        style={{ padding: '3px 8px', fontSize: '0.8rem' }}
-                      >
-                        Add Option
-                      </button>
-                    )}
-                  </div>
-                  
-                  {scenario.scenario_template_id ? (
-                    // Read-only view for template options
-                    <div style={{ 
-                      border: '1px solid var(--color-gray)', 
-                      borderRadius: 'var(--border-radius)',
-                      padding: '10px',
-                      backgroundColor: 'white'
-                    }}>
-                      {scenario.options.length > 0 ? (
-                        <table style={{ width: '100%', margin: 0 }}>
-                          <thead>
-                            <tr>
-                              <th style={{ textAlign: 'left' }}>Option</th>
-                              <th style={{ textAlign: 'left' }}>Value</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {scenario.options.map((option, idx) => (
-                              <tr key={idx}>
-                                <td>{option.text}</td>
-                                <td>{option.value}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      ) : (
-                        <p>No options defined for this template.</p>
-                      )}
-                    </div>
-                  ) : (
-                    // Editable options for custom scenarios
-                    scenario.options.map((option, optionIndex) => (
-                      <div key={optionIndex} style={{ 
-                        display: 'flex', 
-                        gap: 'var(--spacing-sm)', 
-                        marginBottom: 'var(--spacing-sm)',
-                        alignItems: 'center'
-                      }}>
-                        <input
-                          type="text"
-                          className="form-control"
-                          value={option.text}
-                          onChange={(e) => handleScenarioOptionChange(scenarioIndex, optionIndex, 'text', e.target.value)}
-                          placeholder="Option text"
-                          style={{ flex: 3 }}
-                          required
-                        />
-                        <input
-                          type="text"
-                          className="form-control"
-                          value={option.value}
-                          onChange={(e) => handleScenarioOptionChange(scenarioIndex, optionIndex, 'value', e.target.value)}
-                          placeholder="Value"
-                          style={{ flex: 1 }}
-                          required
-                        />
-                        <button 
-                          type="button" 
-                          onClick={() => removeScenarioOption(scenarioIndex, optionIndex)}
-                          className="button danger"
-                          style={{ padding: '3px 8px', fontSize: '0.8rem' }}
-                          disabled={scenario.options.length === 1}
-                        >
-                          Remove
-                        </button>
+                    <div>
+                      <div><strong>Options:</strong> {scenario.options?.length || 0}</div>
+                      <div style={{ fontStyle: 'italic', color: 'var(--color-gray-dark)', fontSize: '0.75rem', marginTop: '3px' }}>
+                        {availableScenarios.find(t => t.id === scenario.scenario_template_id)?.description?.substring(0, 60) || ''}
+                        {(availableScenarios.find(t => t.id === scenario.scenario_template_id)?.description?.length || 0) > 60 ? '...' : ''}
                       </div>
-                    ))
-                  )}
-                </div>
+                    </div>
+                  </div>
+                )}
+                
               </div>
             ))}
           </div>
           
           {/* Break Screens */}
-          <div className="card" style={{ marginBottom: 'var(--spacing-md)' }}>
+          <div className="card" style={{ marginBottom: 'var(--spacing-md)', borderLeft: '4px solid #ff9800' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-md)' }}>
               <h2>Break Screens</h2>
               <button 
@@ -840,7 +715,7 @@ export default function CreateExperiment() {
           </div>
           
           {/* Participant Groups */}
-          <div className="card" style={{ marginBottom: 'var(--spacing-md)' }}>
+          <div className="card" style={{ marginBottom: 'var(--spacing-md)', borderLeft: '4px solid #9c27b0' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-md)' }}>
               <h2>Participant Groups</h2>
               <select
@@ -914,7 +789,7 @@ export default function CreateExperiment() {
           </div>
           
           {/* Survey Questions */}
-          <div className="card" style={{ marginBottom: 'var(--spacing-md)' }}>
+          <div className="card" style={{ marginBottom: 'var(--spacing-md)', borderLeft: '4px solid #2196f3' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-md)' }}>
               <h2>Survey Questions</h2>
               <button 

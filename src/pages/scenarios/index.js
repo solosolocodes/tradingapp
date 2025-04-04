@@ -118,9 +118,9 @@ export default function Scenarios() {
   function getStatusBadge(isActive) {
     let style = {
       display: 'inline-block',
-      padding: '2px 6px',
-      borderRadius: 'var(--border-radius)',
-      fontSize: '0.75rem',
+      padding: '1px 4px',
+      borderRadius: '8px',
+      fontSize: '0.7rem',
       fontWeight: '500'
     };
     
@@ -132,14 +132,14 @@ export default function Scenarios() {
   return (
     <Layout title="Scenario Templates">
       <div className="card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-md)' }}>
-          <h1>Scenario Templates</h1>
-          <Link href="/scenarios/create" className="button" style={{ backgroundColor: 'var(--color-success)' }}>
-            Create Scenario
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+          <h1 style={{ fontSize: '1.4rem', margin: 0 }}>Scenario Templates</h1>
+          <Link href="/scenarios/create" className="button" style={{ backgroundColor: 'var(--color-success)', padding: '4px 8px', fontSize: '0.85rem' }}>
+            + New Scenario
           </Link>
         </div>
         
-        <p style={{ marginBottom: 'var(--spacing-md)' }}>
+        <p style={{ marginBottom: '8px', fontSize: '0.85rem' }}>
           Create and manage scenario templates that can be reused across multiple experiments.
         </p>
         
@@ -155,19 +155,25 @@ export default function Scenarios() {
         ) : (
           <div>
             {scenarios.map(scenario => (
-              <div key={scenario.id} className="card" style={{ marginBottom: 'var(--spacing-sm)', padding: 'var(--spacing-sm)' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '3fr 1fr', gap: '10px', alignItems: 'center' }}>
+              <div key={scenario.id} className="card" style={{ 
+                marginBottom: '8px', 
+                padding: '8px', 
+                borderLeft: '3px solid var(--color-primary)',
+                fontSize: '0.85rem'
+              }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '3fr 1fr', gap: '6px', alignItems: 'start' }}>
                   <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '5px' }}>
-                      <h3 style={{ margin: 0, fontSize: '1.1rem' }}>{scenario.title}</h3>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px', flexWrap: 'wrap' }}>
+                      <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 'bold' }}>{scenario.title}</h3>
+                      <span style={{ fontSize: '0.7rem', color: 'var(--color-gray-dark)', fontFamily: 'monospace' }}>ID: {scenario.id}</span>
                       {getStatusBadge(scenario.is_active)}
                       {scenario.wallet_id && wallets[scenario.wallet_id] && (
                         <span style={{ 
                           backgroundColor: 'var(--color-primary)', 
                           color: 'white',
-                          padding: '2px 6px',
-                          borderRadius: '10px',
-                          fontSize: '0.75rem'
+                          padding: '1px 4px',
+                          borderRadius: '8px',
+                          fontSize: '0.7rem'
                         }}>
                           {wallets[scenario.wallet_id]}
                         </span>
@@ -175,32 +181,39 @@ export default function Scenarios() {
                       <span style={{ 
                         backgroundColor: 'var(--color-info)', 
                         color: 'white',
-                        padding: '2px 6px',
-                        borderRadius: '10px',
-                        fontSize: '0.75rem'
+                        padding: '1px 4px',
+                        borderRadius: '8px',
+                        fontSize: '0.7rem'
                       }}>
                         {scenario.rounds} rounds
                       </span>
                     </div>
                     
-                    <p style={{ margin: '0 0 5px 0', fontSize: '0.85rem' }}>{scenario.description}</p>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
+                      <p style={{ margin: 0, fontSize: '0.8rem', maxHeight: '2.4em', overflow: 'hidden', textOverflow: 'ellipsis', flex: 1 }}>
+                        {scenario.description}
+                      </p>
+                      <span style={{ fontSize: '0.7rem', color: 'var(--color-gray-dark)', whiteSpace: 'nowrap', marginLeft: '8px' }}>
+                        {new Date(scenario.created_at).toLocaleDateString()} {new Date(scenario.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                      </span>
+                    </div>
                     
                     {/* Asset Price Preview */}
                     {scenario.assetPrices && scenario.assetPrices.length > 0 && (
                       <div style={{ 
-                        fontSize: '0.8rem', 
-                        marginTop: '8px',
-                        padding: '6px',
+                        fontSize: '0.75rem', 
+                        marginTop: '4px',
+                        padding: '4px',
                         backgroundColor: 'var(--color-light)', 
                         borderRadius: 'var(--border-radius)',
                         overflowX: 'auto'
                       }}>
-                        <table style={{ margin: 0, fontSize: '0.8rem', width: '100%' }}>
+                        <table style={{ margin: 0, fontSize: '0.75rem', width: '100%' }}>
                           <thead>
                             <tr>
-                              <th style={{ textAlign: 'left' }}>Asset</th>
+                              <th style={{ textAlign: 'left', padding: '2px 4px' }}>Asset</th>
                               {Array.from({ length: scenario.rounds }, (_, i) => i + 1).map(round => (
-                                <th key={round} style={{ textAlign: 'right' }}>Round {round}</th>
+                                <th key={round} style={{ textAlign: 'right', padding: '2px 4px' }}>R{round}</th>
                               ))}
                             </tr>
                           </thead>
@@ -210,13 +223,13 @@ export default function Scenarios() {
                               const assetName = scenario.assetPrices.find(a => a.asset_symbol === symbol)?.asset_name || symbol;
                               return (
                                 <tr key={symbol}>
-                                  <td style={{ fontWeight: 'bold' }}>{symbol} ({assetName})</td>
+                                  <td style={{ fontWeight: 'bold', padding: '2px 4px' }}>{symbol}</td>
                                   {Array.from({ length: scenario.rounds }, (_, i) => i + 1).map(round => {
                                     const price = scenario.assetPrices.find(
                                       a => a.asset_symbol === symbol && a.round_number === round
                                     )?.price || '-';
                                     return (
-                                      <td key={round} style={{ textAlign: 'right' }}>
+                                      <td key={round} style={{ textAlign: 'right', padding: '2px 4px' }}>
                                         ${typeof price === 'number' ? price.toFixed(2) : price}
                                       </td>
                                     );
@@ -231,17 +244,17 @@ export default function Scenarios() {
                   </div>
                   
                   <div>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', justifyContent: 'flex-end' }}>
-                      <Link href={`/scenarios/${scenario.id}`} className="button" style={{ padding: '3px 8px', fontSize: '0.8rem' }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '3px', justifyContent: 'flex-end' }}>
+                      <Link href={`/scenarios/${scenario.id}`} className="button" style={{ padding: '2px 6px', fontSize: '0.7rem' }}>
                         View
                       </Link>
-                      <Link href={`/scenarios/${scenario.id}/edit`} className="button" style={{ padding: '3px 8px', fontSize: '0.8rem', backgroundColor: 'var(--color-warning)' }}>
+                      <Link href={`/scenarios/${scenario.id}/edit`} className="button" style={{ padding: '2px 6px', fontSize: '0.7rem', backgroundColor: 'var(--color-warning)' }}>
                         Edit
                       </Link>
                       <button 
                         className="danger" 
                         onClick={() => handleDelete(scenario.id)}
-                        style={{ padding: '3px 8px', fontSize: '0.8rem' }}
+                        style={{ padding: '2px 6px', fontSize: '0.7rem' }}
                       >
                         Delete
                       </button>
