@@ -8,174 +8,255 @@ export default function Home() {
     totalWallets: 0,
     totalAssets: 0,
     totalTransactions: 0,
-    totalValue: 0,
-    topAssets: []
+    totalExperiments: 0,
+    activeExperiments: 0,
+    totalGroups: 0,
+    totalParticipants: 0
   });
+  const [experiments, setExperiments] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchStats() {
+    async function fetchData() {
       try {
-        // Get wallet count
-        const { count: walletCount, error: walletError } = await supabase
-          .from('wallets')
-          .select('*', { count: 'exact', head: true });
-
-        // Get transaction count
-        const { count: txCount, error: txError } = await supabase
-          .from('transactions')
-          .select('*', { count: 'exact', head: true });
+        const [
+          walletResult,
+          txResult,
+          assetResult,
+          experimentResult,
+          groupResult,
+          participantResult,
+          activeExperimentsResult
+        ] = await Promise.all([
+          // Wallets count
+          supabase.from('wallets').select('*', { count: 'exact', head: true }),
           
-        // Get all assets to calculate total value and asset count
-        const { data: assetsData, error: assetsError } = await supabase
-          .from('assets')
-          .select('*');
+          // Transactions count
+          supabase.from('transactions').select('*', { count: 'exact', head: true }),
           
-        // Calculate totals
-        let totalValue = 0;
-        let totalAssets = 0;
-        let topAssets = [];
+          // Assets
+          supabase.from('assets').select('*'),
+          
+          // Experiments count
+          supabase.from('experiments').select('*', { count: 'exact', head: true }),
+          
+          // Groups count
+          supabase.from('participant_groups').select('*', { count: 'exact', head: true }),
+          
+          // Participants count
+          supabase.from('participants').select('*', { count: 'exact', head: true }),
+          
+          // Active experiments
+          supabase.from('experiments')
+            .select('*')
+            .eq('status', 'active')
+            .order('created_at', { ascending: false })
+            .limit(5)
+        ]);
         
-        if (!assetsError && assetsData) {
-          // Count non-zero assets
-          totalAssets = assetsData.filter(a => a.amount > 0).length;
-          
-          // Calculate total value
-          totalValue = assetsData.reduce((sum, asset) => {
-            return sum + (asset.amount * asset.price_spot);
-          }, 0);
-          
-          // Get top 3 assets by value (excluding USD)
-          topAssets = assetsData
-            .filter(a => a.asset_symbol !== 'USD' && a.amount > 0)
-            .map(a => ({
-              symbol: a.asset_symbol,
-              name: a.name,
-              value: a.amount * a.price_spot
-            }))
-            .sort((a, b) => b.value - a.value)
-            .slice(0, 3);
+        // Calculate asset stats
+        let totalAssets = 0;
+        if (!assetResult.error && assetResult.data) {
+          totalAssets = assetResult.data.filter(a => a.amount > 0).length;
         }
-
-        if (walletError || txError || assetsError) {
-          console.error('Error fetching stats', walletError || txError || assetsError);
-        } else {
-          setStats({
-            totalWallets: walletCount || 0,
-            totalTransactions: txCount || 0,
-            totalAssets,
-            totalValue,
-            topAssets
-          });
+        
+        // Store active experiments
+        if (!activeExperimentsResult.error) {
+          setExperiments(activeExperimentsResult.data || []);
         }
+        
+        // Count active experiments
+        let activeExperiments = 0;
+        if (!experimentResult.error && experimentResult.data) {
+          const { count: experimentActiveCount, error: experimentActiveError } = await supabase
+            .from('experiments')
+            .select('*', { count: 'exact', head: true })
+            .eq('status', 'active');
+          
+          if (!experimentActiveError) {
+            activeExperiments = experimentActiveCount || 0;
+          }
+        }
+        
+        // Set all stats
+        setStats({
+          totalWallets: walletResult.count || 0,
+          totalTransactions: txResult.count || 0,
+          totalAssets,
+          totalExperiments: experimentResult.count || 0,
+          activeExperiments,
+          totalGroups: groupResult.count || 0,
+          totalParticipants: participantResult.count || 0
+        });
+        
       } catch (error) {
-        console.error('Error fetching stats:', error);
+        console.error('Error fetching data:', error);
       } finally {
         setLoading(false);
       }
     }
 
-    fetchStats();
+    fetchData();
   }, []);
+  
+  function getStatusBadge(status) {
+    let style = {
+      display: 'inline-block',
+      padding: '2px 6px',
+      borderRadius: 'var(--border-radius)',
+      fontSize: '0.75rem',
+      fontWeight: '500'
+    };
+    
+    switch(status) {
+      case 'draft':
+        return <span style={{...style, backgroundColor: 'var(--color-gray)'}}>Draft</span>;
+      case 'active':
+        return <span style={{...style, backgroundColor: 'var(--color-success)', color: 'white'}}>Active</span>;
+      case 'completed':
+        return <span style={{...style, backgroundColor: 'var(--color-info)', color: 'white'}}>Completed</span>;
+      default:
+        return <span style={{...style, backgroundColor: 'var(--color-gray)'}}>Unknown</span>;
+    }
+  }
 
   return (
     <Layout title="TradingApp - Home">
       <div className="card">
-        <h1 style={{ marginBottom: 'var(--spacing-md)', fontSize: '2rem' }}>Welcome to TradingApp</h1>
-        <p style={{ marginBottom: 'var(--spacing-lg)' }}>
-          A simple application to track your investments and run behavioral experiments.
-        </p>
-
+        <h1 style={{ marginBottom: 'var(--spacing-sm)', fontSize: '1.8rem' }}>TradingApp Dashboard</h1>
+        
         {loading ? (
-          <p>Loading stats...</p>
+          <p>Loading data...</p>
         ) : (
           <>
-            <div className="grid" style={{ gridTemplateColumns: '2fr 1fr', gap: 'var(--spacing-md)' }}>
-              {/* Main Column */}
-              <div>
-                {/* Wallets Stats */}
-                <div className="card mb-3" style={{ padding: 'var(--spacing-md)' }}>
-                  <h3 style={{ margin: 0, marginBottom: 'var(--spacing-sm)', fontSize: '1.2rem' }}>Wallets</h3>
-                  
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-sm)', padding: 'var(--spacing-sm)', borderBottom: '1px solid var(--color-gray)' }}>
-                    <div>
-                      <span style={{ fontWeight: 'bold' }}>Wallets:</span> {stats.totalWallets}
-                    </div>
-                    <Link href="/wallets" className="button" style={{ padding: '3px 8px', fontSize: '0.8rem' }}>Manage</Link>
-                  </div>
-                  
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-sm)', padding: 'var(--spacing-sm)', borderBottom: '1px solid var(--color-gray)' }}>
-                    <div>
-                      <span style={{ fontWeight: 'bold' }}>Assets:</span> {stats.totalAssets}
-                    </div>
-                    <span className="button" style={{ padding: '3px 8px', fontSize: '0.8rem', backgroundColor: 'var(--color-gray)', cursor: 'default' }}>
-                      {stats.totalAssets === 0 ? 'None' : `${stats.totalAssets}`}
-                    </span>
-                  </div>
-                  
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 'var(--spacing-sm)' }}>
-                    <div>
-                      <span style={{ fontWeight: 'bold' }}>Transactions:</span> {stats.totalTransactions}
-                    </div>
-                    <Link href="/transactions" className="button" style={{ padding: '3px 8px', fontSize: '0.8rem' }}>View</Link>
-                  </div>
+            {/* Stats bar */}
+            <div style={{ 
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', 
+              gap: '8px', 
+              marginBottom: 'var(--spacing-md)',
+              fontSize: '0.9rem'
+            }}>
+              <div className="card" style={{ margin: 0, padding: '10px', textAlign: 'center', backgroundColor: 'var(--color-light)' }}>
+                <div style={{ fontWeight: 'bold', fontSize: '1.2rem', color: 'var(--color-primary)' }}>{stats.totalExperiments}</div>
+                <div>Experiments</div>
+              </div>
+              <div className="card" style={{ margin: 0, padding: '10px', textAlign: 'center', backgroundColor: 'var(--color-light)' }}>
+                <div style={{ fontWeight: 'bold', fontSize: '1.2rem', color: 'var(--color-success)' }}>{stats.activeExperiments}</div>
+                <div>Active</div>
+              </div>
+              <div className="card" style={{ margin: 0, padding: '10px', textAlign: 'center', backgroundColor: 'var(--color-light)' }}>
+                <div style={{ fontWeight: 'bold', fontSize: '1.2rem', color: 'var(--color-primary)' }}>{stats.totalGroups}</div>
+                <div>Groups</div>
+              </div>
+              <div className="card" style={{ margin: 0, padding: '10px', textAlign: 'center', backgroundColor: 'var(--color-light)' }}>
+                <div style={{ fontWeight: 'bold', fontSize: '1.2rem', color: 'var(--color-primary)' }}>{stats.totalParticipants}</div>
+                <div>Participants</div>
+              </div>
+              <div className="card" style={{ margin: 0, padding: '10px', textAlign: 'center', backgroundColor: 'var(--color-light)' }}>
+                <div style={{ fontWeight: 'bold', fontSize: '1.2rem', color: 'var(--color-primary)' }}>{stats.totalWallets}</div>
+                <div>Wallets</div>
+              </div>
+              <div className="card" style={{ margin: 0, padding: '10px', textAlign: 'center', backgroundColor: 'var(--color-light)' }}>
+                <div style={{ fontWeight: 'bold', fontSize: '1.2rem', color: 'var(--color-primary)' }}>{stats.totalAssets}</div>
+                <div>Assets</div>
+              </div>
+              <div className="card" style={{ margin: 0, padding: '10px', textAlign: 'center', backgroundColor: 'var(--color-light)' }}>
+                <div style={{ fontWeight: 'bold', fontSize: '1.2rem', color: 'var(--color-primary)' }}>{stats.totalTransactions}</div>
+                <div>Transactions</div>
+              </div>
+            </div>
+            
+            {/* Active experiments */}
+            {experiments.length > 0 && (
+              <div className="card" style={{ marginBottom: 'var(--spacing-md)', padding: 'var(--spacing-md)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-sm)' }}>
+                  <h3 style={{ margin: 0, fontSize: '1.1rem' }}>Active Experiments</h3>
+                  <Link href="/experiments" className="button" style={{ padding: '3px 8px', fontSize: '0.8rem' }}>View All</Link>
                 </div>
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ fontSize: '0.9rem', margin: 0 }}>
+                    <thead>
+                      <tr>
+                        <th>Title</th>
+                        <th>Status</th>
+                        <th>Scenarios</th>
+                        <th>Participants</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {experiments.map(exp => (
+                        <tr key={exp.id}>
+                          <td>
+                            <Link href={`/experiments/${exp.id}`} style={{ color: 'var(--color-primary)', fontWeight: 'bold' }}>
+                              {exp.title}
+                            </Link>
+                          </td>
+                          <td>{getStatusBadge(exp.status)}</td>
+                          <td>{exp.scenario_count || 0}</td>
+                          <td>{exp.participant_count || 0}</td>
+                          <td>
+                            <div style={{ display: 'flex', gap: '5px' }}>
+                              <Link href={`/experiments/${exp.id}/preview`} className="button" style={{ padding: '2px 5px', fontSize: '0.75rem' }} target="_blank">Preview</Link>
+                              <Link href={`/experiments/${exp.id}/results`} className="button" style={{ padding: '2px 5px', fontSize: '0.75rem', backgroundColor: 'var(--color-info)' }}>Results</Link>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+            
+            {/* Main sections */}
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', 
+              gap: 'var(--spacing-md)' 
+            }}>
+              {/* Experiments */}
+              <div className="card" style={{ margin: 0, padding: 'var(--spacing-md)', backgroundColor: 'var(--color-light)' }}>
+                <h3 style={{ margin: 0, marginBottom: 'var(--spacing-sm)', fontSize: '1.1rem' }}>Experiments</h3>
+                <p style={{ fontSize: '0.85rem', margin: 0, marginBottom: 'var(--spacing-sm)' }}>Economics behavior scenarios</p>
                 
-                {/* Groups of Participants */}
-                <div className="card" style={{ padding: 'var(--spacing-md)', backgroundColor: 'var(--color-light)' }}>
-                  <h3 style={{ margin: 0, marginBottom: 'var(--spacing-sm)', fontSize: '1.2rem' }}>Groups of Participants</h3>
-                  <p style={{ fontSize: '0.9rem', margin: 0, marginBottom: 'var(--spacing-md)' }}>Manage experiment participant groups</p>
-                  
-                  <div style={{ marginBottom: 'var(--spacing-md)' }}>
-                    <p style={{ margin: '3px 0', fontSize: '0.9rem' }}>Create and manage groups of participants for your behavioral experiments.</p>
-                  </div>
-                  
-                  <div style={{ display: 'flex', gap: 'var(--spacing-sm)', marginBottom: 'var(--spacing-md)' }}>
-                    <Link href="/groups/create" className="button" style={{ flex: 1, textAlign: 'center', padding: '5px 10px', fontSize: '0.9rem', backgroundColor: 'var(--color-success)' }}>
-                      Create Group
-                    </Link>
-                    <Link href="/groups" className="button" style={{ flex: 1, textAlign: 'center', padding: '5px 10px', fontSize: '0.9rem' }}>
-                      View All
-                    </Link>
-                  </div>
-                  
-                  <Link href="/groups/manage" className="button" style={{ width: '100%', textAlign: 'center', padding: '5px 10px', fontSize: '0.9rem', backgroundColor: 'var(--color-warning)' }}>
-                    Manage Groups
+                <div style={{ display: 'flex', gap: 'var(--spacing-sm)', marginTop: 'var(--spacing-sm)' }}>
+                  <Link href="/experiments/create" className="button" style={{ flex: 1, textAlign: 'center', padding: '5px 10px', fontSize: '0.85rem', backgroundColor: 'var(--color-success)' }}>
+                    Create
+                  </Link>
+                  <Link href="/experiments" className="button" style={{ flex: 1, textAlign: 'center', padding: '5px 10px', fontSize: '0.85rem' }}>
+                    View All
                   </Link>
                 </div>
               </div>
               
-              {/* Side Column */}
-              <div>
-                {/* Experiments */}
-                <div className="card" style={{ padding: 'var(--spacing-md)', backgroundColor: 'var(--color-light)', marginBottom: 'var(--spacing-md)' }}>
-                  <h3 style={{ margin: 0, marginBottom: 'var(--spacing-sm)', fontSize: '1.2rem' }}>Experiments</h3>
-                  <p style={{ fontSize: '0.9rem', margin: 0, marginBottom: 'var(--spacing-md)' }}>Economics behavior scenarios</p>
-                  
-                  <div style={{ marginBottom: 'var(--spacing-md)' }}>
-                    <p style={{ margin: '3px 0', fontSize: '0.9rem' }}>Configure behavioral economics experiments with scenarios, intro screens, and surveys.</p>
-                  </div>
-                  
-                  <div style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
-                    <Link href="/experiments/create" className="button" style={{ flex: 1, textAlign: 'center', padding: '5px 10px', fontSize: '0.9rem', backgroundColor: 'var(--color-success)' }}>
-                      Create Experiment
-                    </Link>
-                    <Link href="/experiments" className="button" style={{ flex: 1, textAlign: 'center', padding: '5px 10px', fontSize: '0.9rem' }}>
-                      View All
-                    </Link>
-                  </div>
-                </div>
+              {/* Wallets */}
+              <div className="card" style={{ margin: 0, padding: 'var(--spacing-md)' }}>
+                <h3 style={{ margin: 0, marginBottom: 'var(--spacing-sm)', fontSize: '1.1rem' }}>Wallets</h3>
+                <p style={{ fontSize: '0.85rem', margin: 0, marginBottom: 'var(--spacing-sm)' }}>Track investments and assets</p>
                 
-                {/* Quick Actions */}
-                <div className="card" style={{ padding: 'var(--spacing-md)' }}>
-                  <h3 style={{ margin: 0, marginBottom: 'var(--spacing-sm)', fontSize: '1.2rem' }}>Quick Actions</h3>
-                  
-                  <Link href="/wallets" className="button" style={{ display: 'block', width: '100%', textAlign: 'center', marginBottom: 'var(--spacing-sm)' }}>
-                    Create Wallet
+                <div style={{ display: 'flex', gap: 'var(--spacing-sm)', marginTop: 'var(--spacing-sm)' }}>
+                  <Link href="/wallets/create" className="button" style={{ flex: 1, textAlign: 'center', padding: '5px 10px', fontSize: '0.85rem', backgroundColor: 'var(--color-success)' }}>
+                    Create
                   </Link>
-                  
-                  <Link href="/transactions" className="button" style={{ display: 'block', width: '100%', textAlign: 'center', backgroundColor: 'var(--color-success)' }}>
-                    Add Transaction
+                  <Link href="/wallets" className="button" style={{ flex: 1, textAlign: 'center', padding: '5px 10px', fontSize: '0.85rem' }}>
+                    View All
+                  </Link>
+                </div>
+              </div>
+              
+              {/* Groups of Participants */}
+              <div className="card" style={{ margin: 0, padding: 'var(--spacing-md)', backgroundColor: 'var(--color-light)' }}>
+                <h3 style={{ margin: 0, marginBottom: 'var(--spacing-sm)', fontSize: '1.1rem' }}>Participant Groups</h3>
+                <p style={{ fontSize: '0.85rem', margin: 0, marginBottom: 'var(--spacing-sm)' }}>Manage experiment participants</p>
+                
+                <div style={{ display: 'flex', gap: 'var(--spacing-sm)', marginTop: 'var(--spacing-sm)' }}>
+                  <Link href="/groups/create" className="button" style={{ flex: 1, textAlign: 'center', padding: '5px 10px', fontSize: '0.85rem', backgroundColor: 'var(--color-success)' }}>
+                    Create
+                  </Link>
+                  <Link href="/groups" className="button" style={{ flex: 1, textAlign: 'center', padding: '5px 10px', fontSize: '0.85rem' }}>
+                    View All
                   </Link>
                 </div>
               </div>
@@ -183,8 +264,8 @@ export default function Home() {
           </>
         )}
 
-        <div className="mt-4 text-center">
-          <p style={{ fontSize: '0.9rem', color: 'var(--color-gray-dark)' }}>TradingApp - Track investments and run behavioral experiments</p>
+        <div className="mt-3 text-center">
+          <p style={{ fontSize: '0.8rem', color: 'var(--color-gray-dark)', margin: '10px 0 0 0' }}>TradingApp - Track investments and run behavioral experiments</p>
         </div>
       </div>
     </Layout>
