@@ -386,10 +386,11 @@ export default function EditScenario() {
             }
             
             alert(`Successfully imported and saved ${newPrices.length} price points from CSV.`);
+            // Refresh the prices from the database to ensure UI is in sync
+            await refreshPrices();
           } catch (error) {
             console.error('Error saving imported prices:', error);
             alert(`Error saving imported prices: ${error.message}`);
-          } finally {
             setSaving(false);
           }
         } else {
@@ -410,6 +411,37 @@ export default function EditScenario() {
     
     // Reset the file input so the same file can be selected again
     e.target.value = null;
+  };
+  
+  // Refresh asset prices from database
+  const refreshPrices = async () => {
+    try {
+      setSaving(true);
+      setError(null);
+      
+      // Fetch asset prices
+      const { data: pricesData, error: pricesError } = await supabase
+        .from('scenario_asset_prices')
+        .select('*')
+        .eq('scenario_id', id)
+        .order('asset_symbol')
+        .order('round_number');
+      
+      if (pricesError) throw pricesError;
+      
+      // Only update state if we have data
+      if (pricesData && pricesData.length > 0) {
+        setAssetPrices(pricesData);
+        console.log('Prices refreshed:', pricesData.length, 'price points');
+      } else {
+        console.log('No price data found in database');
+      }
+    } catch (error) {
+      console.error('Error refreshing prices:', error);
+      setError(`Error refreshing prices: ${error.message}`);
+    } finally {
+      setSaving(false);
+    }
   };
   
   // Submit the form
@@ -709,9 +741,25 @@ export default function EditScenario() {
                       disabled={!scenario.wallet_id || walletAssets.length === 0 || saving}
                     />
                   </label>
+                  <button 
+                    type="button" 
+                    className="button" 
+                    style={{ 
+                      padding: '3px 8px', 
+                      fontSize: '0.8rem', 
+                      backgroundColor: 'var(--color-success)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}
+                    onClick={refreshPrices}
+                    disabled={saving}
+                  >
+                    <span style={{ fontSize: '1rem' }}>↻</span> Refresh Prices
+                  </button>
                   {saving && (
                     <span style={{ fontSize: '0.85rem', color: 'var(--color-primary)', marginLeft: '5px' }}>
-                      Saving data...
+                      {saving ? 'Processing...' : ''}
                     </span>
                   )}
                 </div>
