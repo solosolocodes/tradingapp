@@ -16,6 +16,8 @@ export default function Wallets() {
   async function fetchWallets() {
     try {
       setLoading(true);
+      console.log('Fetching wallets from Supabase...');
+      
       const { data, error } = await supabase
         .from('wallets')
         .select('*')
@@ -23,11 +25,14 @@ export default function Wallets() {
 
       if (error) {
         console.error('Error fetching wallets:', error);
+        alert(`Error loading wallets: ${error.message}`);
       } else {
+        console.log('Wallets fetched successfully:', data);
         setWallets(data || []);
       }
     } catch (error) {
-      console.error('Error fetching wallets:', error);
+      console.error('Unexpected error fetching wallets:', error);
+      alert(`Unexpected error: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -45,26 +50,44 @@ export default function Wallets() {
     e.preventDefault();
     
     try {
+      // Add debugging
+      console.log('Attempting to create wallet:', formData);
+      
+      // First check if we can connect to Supabase
+      const { data: testData, error: testError } = await supabase
+        .from('wallets')
+        .select('count');
+        
+      if (testError) {
+        console.error('Error connecting to Supabase:', testError);
+        alert(`Database connection error: ${testError.message}`);
+        return;
+      }
+      
+      // Create the wallet with a generated UUID
       const { data, error } = await supabase
         .from('wallets')
         .insert([
           { 
             name: formData.name,
-            description: formData.description 
+            description: formData.description || null,
+            // We don't need to specify ID as it will be auto-generated
           }
-        ]);
+        ])
+        .select(); // Return the inserted data
 
       if (error) {
         console.error('Error creating wallet:', error);
-        alert('Error creating wallet. Please try again.');
+        alert(`Error creating wallet: ${error.message}`);
       } else {
+        console.log('Wallet created successfully:', data);
         setFormData({ name: '', description: '' });
         setShowForm(false);
         fetchWallets();
       }
     } catch (error) {
       console.error('Error creating wallet:', error);
-      alert('Error creating wallet. Please try again.');
+      alert(`Unexpected error: ${error.message}`);
     }
   }
 
