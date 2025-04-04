@@ -79,11 +79,11 @@ export default function Home() {
   }, []);
 
   return (
-    <Layout title="Crypto Tracker - Home">
+    <Layout title="TradingApp - Home">
       <div className="card">
-        <h1 style={{ marginBottom: 'var(--spacing-md)', fontSize: '2rem' }}>Welcome to Crypto Tracker</h1>
+        <h1 style={{ marginBottom: 'var(--spacing-md)', fontSize: '2rem' }}>Welcome to TradingApp</h1>
         <p style={{ marginBottom: 'var(--spacing-lg)' }}>
-          A simple application to track your cryptocurrency investments.
+          A simple application to track your investments and run behavioral experiments.
         </p>
 
         {loading ? (
@@ -93,15 +93,9 @@ export default function Home() {
             <div className="grid" style={{ gridTemplateColumns: '2fr 1fr', gap: 'var(--spacing-md)' }}>
               {/* Main Column */}
               <div>
-                {/* Portfolio Value */}
-                <div className="card mb-3" style={{ textAlign: 'center', backgroundColor: 'var(--color-primary)', color: 'white', padding: 'var(--spacing-md)' }}>
-                  <h3 style={{ color: 'white', margin: 0 }}>Total Portfolio Value</h3>
-                  <p style={{ fontSize: '2.2rem', fontWeight: 'bold', margin: 0 }}>${stats.totalValue.toFixed(2)}</p>
-                </div>
-                
-                {/* Portfolio Stats */}
+                {/* Wallets Stats */}
                 <div className="card mb-3" style={{ padding: 'var(--spacing-md)' }}>
-                  <h3 style={{ margin: 0, marginBottom: 'var(--spacing-sm)', fontSize: '1.2rem' }}>Your Portfolio</h3>
+                  <h3 style={{ margin: 0, marginBottom: 'var(--spacing-sm)', fontSize: '1.2rem' }}>Wallets</h3>
                   
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-sm)', padding: 'var(--spacing-sm)', borderBottom: '1px solid var(--color-gray)' }}>
                     <div>
@@ -189,7 +183,7 @@ export default function Home() {
         )}
 
         <div className="mt-4 text-center">
-          <p style={{ fontSize: '0.9rem', color: 'var(--color-gray-dark)' }}>Crypto Tracker Simple - Track your investments with ease</p>
+          <p style={{ fontSize: '0.9rem', color: 'var(--color-gray-dark)' }}>TradingApp - Track investments and run behavioral experiments</p>
         </div>
       </div>
     </Layout>
