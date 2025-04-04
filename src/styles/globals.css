@@ -141,6 +141,10 @@ button.danger, .button.danger {
   .grid-2, .grid-3 {
     grid-template-columns: 1fr;
   }
+  
+  .grid {
+    grid-template-columns: 1fr !important;
+  }
 }
 
 /* Table styles */
