@@ -215,6 +215,15 @@ export default function ViewExperiment() {
               >
                 Delete
               </button>
+              <Link 
+                href={`/experiments/${id}/preview`} 
+                className="button" 
+                style={{ backgroundColor: 'var(--color-info)' }}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Preview
+              </Link>
             </div>
             
             {experiment.status === 'active' && (

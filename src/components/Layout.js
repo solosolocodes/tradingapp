@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import Head from 'next/head';
 
-export default function Layout({ children, title = 'Crypto Tracker' }) {
+export default function Layout({ children, title = 'TradingApp' }) {
   return (
     <>
       <Head>
@@ -14,7 +14,7 @@ export default function Layout({ children, title = 'Crypto Tracker' }) {
       <header>
         <div className="container">
           <nav>
-            <div className="app-title">Crypto Tracker</div>
+            <div className="app-title">TradingApp</div>
             <ul>
               <li><Link href="/">Home</Link></li>
               <li><Link href="/wallets">Wallets</Link></li>
