@@ -121,26 +121,27 @@ export default function Home() {
                   </div>
                 </div>
                 
-                {/* Trading Groups */}
+                {/* Groups of Participants */}
                 <div className="card" style={{ padding: 'var(--spacing-md)', backgroundColor: 'var(--color-light)' }}>
-                  <h3 style={{ margin: 0, marginBottom: 'var(--spacing-sm)', fontSize: '1.2rem' }}>Trading Groups</h3>
-                  <p style={{ fontSize: '0.9rem', margin: 0, marginBottom: 'var(--spacing-sm)' }}>Connect with other traders</p>
+                  <h3 style={{ margin: 0, marginBottom: 'var(--spacing-sm)', fontSize: '1.2rem' }}>Groups of Participants</h3>
+                  <p style={{ fontSize: '0.9rem', margin: 0, marginBottom: 'var(--spacing-md)' }}>Manage experiment participant groups</p>
                   
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 'var(--spacing-sm)' }}>
-                    <div>
-                      <h4 style={{ margin: 0, fontSize: '1rem' }}>Beginners Circle</h4>
-                      <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--color-gray-dark)' }}>12 members</p>
-                    </div>
-                    <button style={{ padding: '3px 8px', fontSize: '0.8rem', backgroundColor: 'var(--color-info)' }}>Join</button>
+                  <div style={{ marginBottom: 'var(--spacing-md)' }}>
+                    <p style={{ margin: '3px 0', fontSize: '0.9rem' }}>Create and manage groups of participants for your behavioral experiments.</p>
                   </div>
                   
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <div>
-                      <h4 style={{ margin: 0, fontSize: '1rem' }}>Advanced Traders</h4>
-                      <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--color-gray-dark)' }}>8 members</p>
-                    </div>
-                    <button style={{ padding: '3px 8px', fontSize: '0.8rem', backgroundColor: 'var(--color-info)' }}>Join</button>
+                  <div style={{ display: 'flex', gap: 'var(--spacing-sm)', marginBottom: 'var(--spacing-md)' }}>
+                    <Link href="/groups/create" className="button" style={{ flex: 1, textAlign: 'center', padding: '5px 10px', fontSize: '0.9rem', backgroundColor: 'var(--color-success)' }}>
+                      Create Group
+                    </Link>
+                    <Link href="/groups" className="button" style={{ flex: 1, textAlign: 'center', padding: '5px 10px', fontSize: '0.9rem' }}>
+                      View All
+                    </Link>
                   </div>
+                  
+                  <Link href="/groups/manage" className="button" style={{ width: '100%', textAlign: 'center', padding: '5px 10px', fontSize: '0.9rem', backgroundColor: 'var(--color-warning)' }}>
+                    Manage Groups
+                  </Link>
                 </div>
               </div>
               
