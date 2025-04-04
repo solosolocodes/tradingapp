@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Layout from '../../components/Layout';
 import Link from 'next/link';
@@ -16,6 +16,42 @@ export default function CreateExperiment() {
     status: 'draft'
   });
   
+  // Group assignments
+  const [assignedGroups, setAssignedGroups] = useState([]);
+  const [availableGroups, setAvailableGroups] = useState([]);
+  const [availableWallets, setAvailableWallets] = useState([]);
+  
+  // Fetch available groups and wallets
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        // Fetch participant groups
+        const { data: groupsData, error: groupsError } = await supabase
+          .from('participant_groups')
+          .select('id, name, description, member_count')
+          .eq('is_active', true)
+          .order('name');
+          
+        if (groupsError) throw groupsError;
+        setAvailableGroups(groupsData || []);
+        
+        // Fetch wallets
+        const { data: walletsData, error: walletsError } = await supabase
+          .from('wallets')
+          .select('id, name')
+          .order('name');
+          
+        if (walletsError) throw walletsError;
+        setAvailableWallets(walletsData || []);
+      } catch (error) {
+        console.error('Error fetching groups or wallets:', error);
+        setError('Error loading groups and wallets. Please try again.');
+      }
+    }
+    
+    fetchData();
+  }, []);
+  
   // Intro screens
   const [introScreens, setIntroScreens] = useState([
     { title: 'Welcome', content: 'Welcome to this experiment.' }
@@ -27,6 +63,7 @@ export default function CreateExperiment() {
       title: 'Scenario 1', 
       description: 'First scenario description',
       duration: 300, // duration in seconds
+      wallet_id: null,
       options: [
         { text: 'Option A', value: 'A' },
         { text: 'Option B', value: 'B' }
@@ -91,6 +128,15 @@ export default function CreateExperiment() {
     newScenarios[index] = {
       ...newScenarios[index],
       [field]: value
+    };
+    setScenarios(newScenarios);
+  };
+  
+  const handleScenarioWalletChange = (index, wallet_id) => {
+    const newScenarios = [...scenarios];
+    newScenarios[index] = {
+      ...newScenarios[index],
+      wallet_id: wallet_id === '' ? null : wallet_id
     };
     setScenarios(newScenarios);
   };
@@ -218,6 +264,36 @@ export default function CreateExperiment() {
     }
   };
   
+  // Group assignment handlers
+  const addGroupAssignment = (groupId) => {
+    const group = availableGroups.find(g => g.id === groupId);
+    if (!group) return;
+    
+    if (!assignedGroups.some(g => g.id === groupId)) {
+      setAssignedGroups([
+        ...assignedGroups, 
+        { 
+          id: group.id, 
+          name: group.name, 
+          member_count: group.member_count,
+          is_control_group: false
+        }
+      ]);
+    }
+  };
+  
+  const removeGroupAssignment = (groupId) => {
+    setAssignedGroups(assignedGroups.filter(g => g.id !== groupId));
+  };
+  
+  const toggleControlGroup = (groupId) => {
+    setAssignedGroups(assignedGroups.map(group => 
+      group.id === groupId 
+        ? { ...group, is_control_group: !group.is_control_group } 
+        : group
+    ));
+  };
+  
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -274,12 +350,30 @@ export default function CreateExperiment() {
             title: scenario.title,
             description: scenario.description,
             duration: scenario.duration,
+            wallet_id: scenario.wallet_id,  // Add wallet_id
             order_index: index,
             options: scenario.options
           }))
         );
       
       if (scenariosError) throw scenariosError;
+      
+      // Insert group assignments if any
+      if (assignedGroups.length > 0) {
+        const { error: groupsError } = await supabase
+          .from('experiment_group_assignments')
+          .insert(
+            assignedGroups.map(group => ({
+              experiment_id: experimentId,
+              group_id: group.id,
+              is_active: true,
+              is_control_group: group.is_control_group,
+              assignment_date: new Date()
+            }))
+          );
+          
+        if (groupsError) throw groupsError;
+      }
       
       // Insert break screens
       const { error: breaksError } = await supabase
@@ -503,6 +597,22 @@ export default function CreateExperiment() {
                 </div>
                 
                 <div className="form-group">
+                  <label className="form-label">Assign Wallet (Optional)</label>
+                  <select
+                    className="form-control"
+                    value={scenario.wallet_id || ''}
+                    onChange={(e) => handleScenarioWalletChange(scenarioIndex, e.target.value)}
+                  >
+                    <option value="">-- No wallet assigned --</option>
+                    {availableWallets.map(wallet => (
+                      <option key={wallet.id} value={wallet.id}>
+                        {wallet.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div className="form-group">
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-sm)' }}>
                     <label className="form-label" style={{ marginBottom: 0 }}>Options</label>
                     <button 
@@ -607,6 +717,80 @@ export default function CreateExperiment() {
                 </div>
               </div>
             ))}
+          </div>
+          
+          {/* Participant Groups */}
+          <div className="card" style={{ marginBottom: 'var(--spacing-md)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-md)' }}>
+              <h2>Participant Groups</h2>
+              <select
+                className="form-control"
+                style={{ width: 'auto', display: 'inline-block' }}
+                onChange={(e) => e.target.value && addGroupAssignment(e.target.value)}
+                value=""
+              >
+                <option value="">-- Add a group --</option>
+                {availableGroups
+                  .filter(g => !assignedGroups.some(ag => ag.id === g.id))
+                  .map(group => (
+                    <option key={group.id} value={group.id}>
+                      {group.name} ({group.member_count || 0} members)
+                    </option>
+                  ))
+                }
+              </select>
+            </div>
+            
+            {assignedGroups.length === 0 ? (
+              <p>No participant groups assigned yet. Assign groups to collect responses.</p>
+            ) : (
+              <div style={{ 
+                border: '1px solid var(--color-gray)', 
+                borderRadius: 'var(--border-radius)',
+                margin: 'var(--spacing-md) 0',
+                overflow: 'hidden'
+              }}>
+                <table style={{ margin: 0, width: '100%' }}>
+                  <thead>
+                    <tr>
+                      <th>Group Name</th>
+                      <th>Members</th>
+                      <th>Control Group</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {assignedGroups.map(group => (
+                      <tr key={group.id}>
+                        <td>{group.name}</td>
+                        <td>{group.member_count || 0}</td>
+                        <td style={{ textAlign: 'center' }}>
+                          <input 
+                            type="checkbox" 
+                            checked={group.is_control_group} 
+                            onChange={() => toggleControlGroup(group.id)}
+                          />
+                        </td>
+                        <td>
+                          <button
+                            type="button"
+                            onClick={() => removeGroupAssignment(group.id)}
+                            className="button danger"
+                            style={{ padding: '2px 5px', fontSize: '0.8rem' }}
+                          >
+                            Remove
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            
+            <p style={{ fontSize: '0.85rem', color: 'var(--color-gray-dark)' }}>
+              Tip: Control groups are used as baselines for comparing experiment results.
+            </p>
           </div>
           
           {/* Survey Questions */}
