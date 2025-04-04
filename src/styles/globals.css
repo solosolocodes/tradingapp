@@ -161,6 +161,14 @@ th {
   font-weight: 600;
 }
 
+.text-right {
+  text-align: right;
+}
+
+.text-center {
+  text-align: center;
+}
+
 /* Header and navigation */
 header {
   background-color: var(--color-dark);

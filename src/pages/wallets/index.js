@@ -18,17 +18,50 @@ export default function Wallets() {
       setLoading(true);
       console.log('Fetching wallets from Supabase...');
       
-      const { data, error } = await supabase
+      // First fetch wallets
+      const { data: walletData, error: walletError } = await supabase
         .from('wallets')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching wallets:', error);
-        alert(`Error loading wallets: ${error.message}`);
+      if (walletError) {
+        console.error('Error fetching wallets:', walletError);
+        alert(`Error loading wallets: ${walletError.message}`);
+        setLoading(false);
+        return;
+      }
+      
+      // Now fetch assets for each wallet to calculate total values
+      const walletIds = walletData.map(wallet => wallet.id);
+      
+      if (walletIds.length > 0) {
+        const { data: assetsData, error: assetsError } = await supabase
+          .from('assets')
+          .select('*')
+          .in('wallet_id', walletIds);
+          
+        if (assetsError) {
+          console.error('Error fetching assets:', assetsError);
+        } else {
+          // Calculate total value for each wallet
+          const walletsWithValues = walletData.map(wallet => {
+            const walletAssets = assetsData.filter(asset => asset.wallet_id === wallet.id);
+            const totalValue = walletAssets.reduce((sum, asset) => {
+              return sum + (asset.amount * asset.price_spot);
+            }, 0);
+            
+            return {
+              ...wallet,
+              totalValue,
+              assetCount: walletAssets.length
+            };
+          });
+          
+          console.log('Wallets with values:', walletsWithValues);
+          setWallets(walletsWithValues);
+        }
       } else {
-        console.log('Wallets fetched successfully:', data);
-        setWallets(data || []);
+        setWallets([]);
       }
     } catch (error) {
       console.error('Unexpected error fetching wallets:', error);
@@ -178,6 +211,21 @@ export default function Wallets() {
                   </div>
                 </div>
                 {wallet.description && <p className="mt-1">{wallet.description}</p>}
+                
+                <div className="mt-2" style={{ display: 'flex', gap: 'var(--spacing-md)' }}>
+                  <div>
+                    <strong style={{ color: 'var(--color-dark)' }}>Total Value:</strong>
+                    <span style={{ fontSize: '1.2rem', marginLeft: 'var(--spacing-sm)', color: 'var(--color-primary)', fontWeight: 'bold' }}>
+                      ${wallet.totalValue ? wallet.totalValue.toFixed(2) : '0.00'}
+                    </span>
+                  </div>
+                  <div>
+                    <span style={{ color: 'var(--color-gray-dark)' }}>
+                      {wallet.assetCount || 0} Assets
+                    </span>
+                  </div>
+                </div>
+                
                 <p className="mt-2" style={{ color: 'var(--color-gray-dark)', fontSize: '0.9rem' }}>
                   Created: {new Date(wallet.created_at).toLocaleDateString()}
                 </p>
