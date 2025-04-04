@@ -153,7 +153,7 @@ export default function ResetDemoExperiments() {
             title: 'Investment Decision',
             description: 'Choose how to allocate your investment funds.',
             duration: 60,
-            options: [
+            option_template: [
               { value: 'option_a', text: 'Invest in Stock A' },
               { value: 'option_b', text: 'Invest in Stock B' },
               { value: 'option_c', text: 'Keep funds in cash' }
@@ -163,7 +163,7 @@ export default function ResetDemoExperiments() {
             title: 'Market Timing',
             description: 'Decide when to enter or exit the market.',
             duration: 45,
-            options: [
+            option_template: [
               { value: 'buy', text: 'Buy now' },
               { value: 'wait', text: 'Wait for a better entry point' },
               { value: 'sell', text: 'Sell current holdings' }
@@ -173,7 +173,7 @@ export default function ResetDemoExperiments() {
             title: 'Cryptocurrency Trade',
             description: 'Make a decision about your cryptocurrency holdings.',
             duration: 60,
-            options: [
+            option_template: [
               { value: 'hold', text: 'Hold for long term' },
               { value: 'trade', text: 'Trade for short term gains' },
               { value: 'exit', text: 'Exit position completely' }
@@ -255,7 +255,7 @@ export default function ResetDemoExperiments() {
               title: templateToUse.title,
               description: templateToUse.description,
               duration: templateToUse.duration,
-              options: templateToUse.options,
+              options: templateToUse.option_template || [],
               order_index: section.order_index
             });
         }

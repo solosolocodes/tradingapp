@@ -255,7 +255,7 @@ export default function CreateExperiment() {
               title: templateToUse.title,
               description: templateToUse.description,
               duration: templateToUse.duration,
-              options: templateToUse.options,
+              options: templateToUse.option_template || [],
               order_index: section.order_index
             });
         }

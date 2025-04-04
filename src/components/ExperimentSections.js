@@ -221,7 +221,7 @@ export default function ExperimentSections({ experimentId, compact = true }) {
       // Get default scenario template for use in scenarios
       const { data: scenarioTemplates, error: scenarioError } = await supabase
         .from('scenario_templates')
-        .select('id, title, description, duration, options')
+        .select('id, title, description, duration, option_template')
         .order('created_at', { ascending: false })
         .limit(3);
         
@@ -404,7 +404,7 @@ export default function ExperimentSections({ experimentId, compact = true }) {
               title: templateData.title,
               description: templateData.description,
               duration: templateData.duration,
-              options: templateData.options,
+              options: templateData.option_template || [],
               order_index: newOrderIndex
             })
             .select()
