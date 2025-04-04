@@ -14,7 +14,7 @@ export default function EditExperiment() {
   const [error, setError] = useState(null);
   const [availableGroups, setAvailableGroups] = useState([]);
   const [loadingGroups, setLoadingGroups] = useState(true);
-  const [activeTab, setActiveTab] = useState('basic');
+  const [activeTab, setActiveTab] = useState('sections');
   
   // Set activeTab based on URL parameter when it changes
   useEffect(() => {

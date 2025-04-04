@@ -139,7 +139,7 @@ export default function CreateExperiment() {
       // Get default scenario template for use in scenarios
       const { data: scenarioTemplates, error: scenarioError } = await supabase
         .from('scenario_templates')
-        .select('id, title, description, duration, options')
+        .select('id, title, description, duration, option_template')
         .order('created_at', { ascending: false })
         .limit(3);
         
@@ -153,7 +153,7 @@ export default function CreateExperiment() {
             title: 'Investment Decision',
             description: 'Choose how to allocate your investment funds.',
             duration: 60,
-            options: [
+            option_template: [
               { value: 'option_a', text: 'Invest in Stock A' },
               { value: 'option_b', text: 'Invest in Stock B' },
               { value: 'option_c', text: 'Keep funds in cash' }
@@ -163,7 +163,7 @@ export default function CreateExperiment() {
             title: 'Market Timing',
             description: 'Decide when to enter or exit the market.',
             duration: 45,
-            options: [
+            option_template: [
               { value: 'buy', text: 'Buy now' },
               { value: 'wait', text: 'Wait for a better entry point' },
               { value: 'sell', text: 'Sell current holdings' }
@@ -173,7 +173,7 @@ export default function CreateExperiment() {
             title: 'Cryptocurrency Trade',
             description: 'Make a decision about your cryptocurrency holdings.',
             duration: 60,
-            options: [
+            option_template: [
               { value: 'hold', text: 'Hold for long term' },
               { value: 'trade', text: 'Trade for short term gains' },
               { value: 'exit', text: 'Exit position completely' }
@@ -202,7 +202,7 @@ export default function CreateExperiment() {
                 title: 'Investment Decision',
                 description: 'Choose how to allocate your investment funds.',
                 duration: 60,
-                options: [
+                option_template: [
                   { value: 'option_a', text: 'Invest in Stock A' },
                   { value: 'option_b', text: 'Invest in Stock B' },
                   { value: 'option_c', text: 'Keep funds in cash' }
@@ -212,7 +212,7 @@ export default function CreateExperiment() {
                 title: 'Market Timing',
                 description: 'Decide when to enter or exit the market.',
                 duration: 45,
-                options: [
+                option_template: [
                   { value: 'buy', text: 'Buy now' },
                   { value: 'wait', text: 'Wait for a better entry point' },
                   { value: 'sell', text: 'Sell current holdings' }
@@ -222,7 +222,7 @@ export default function CreateExperiment() {
                 title: 'Cryptocurrency Trade',
                 description: 'Make a decision about your cryptocurrency holdings.',
                 duration: 60,
-                options: [
+                option_template: [
                   { value: 'hold', text: 'Hold for long term' },
                   { value: 'trade', text: 'Trade for short term gains' },
                   { value: 'exit', text: 'Exit position completely' }
