@@ -28,6 +28,9 @@ export default function EditExperiment() {
   // Available scenario templates
   const [availableScenarios, setAvailableScenarios] = useState([]);
   
+  // Available wallets for selection
+  const [availableWallets, setAvailableWallets] = useState([]);
+  
   // Break screens
   const [breakScreens, setBreakScreens] = useState([]);
   
@@ -69,6 +72,15 @@ export default function EditExperiment() {
         
       if (scenariosTemplateError) throw scenariosTemplateError;
       setAvailableScenarios(templateData || []);
+      
+      // Fetch wallets for scenario assignment
+      const { data: walletsData, error: walletsError } = await supabase
+        .from('wallets')
+        .select('id, name')
+        .order('name');
+        
+      if (walletsError) throw walletsError;
+      setAvailableWallets(walletsData || []);
       
       // Fetch intro screens
       const { data: introData, error: introError } = await supabase
