@@ -3,6 +3,7 @@ import { useRouter } from 'next/router';
 import Layout from '../../../components/Layout';
 import Link from 'next/link';
 import supabase from '../../../lib/supabase';
+import ExperimentSections from '../../../components/ExperimentSections';
 
 export default function EditExperiment() {
   const router = useRouter();
@@ -13,6 +14,7 @@ export default function EditExperiment() {
   const [error, setError] = useState(null);
   const [availableGroups, setAvailableGroups] = useState([]);
   const [loadingGroups, setLoadingGroups] = useState(true);
+  const [activeTab, setActiveTab] = useState('basic');
   
   // Main experiment data
   const [experimentData, setExperimentData] = useState({
@@ -189,8 +191,9 @@ export default function EditExperiment() {
         if (assignmentError) throw assignmentError;
       }
       
-      // Redirect to experiments list
-      router.push('/experiments');
+      // Stay on the page but show success message
+      setError(null);
+      alert('Experiment updated successfully');
       
     } catch (error) {
       console.error('Error updating experiment:', error);
@@ -211,6 +214,21 @@ export default function EditExperiment() {
     );
   }
   
+  // Tabs bar style
+  const tabStyle = {
+    display: 'flex',
+    borderBottom: '1px solid var(--color-gray)',
+    marginBottom: 'var(--spacing-md)'
+  };
+  
+  const tabItemStyle = (isActive) => ({
+    padding: '8px 16px',
+    cursor: 'pointer',
+    fontWeight: isActive ? 'bold' : 'normal',
+    borderBottom: isActive ? '3px solid var(--color-primary)' : 'none',
+    color: isActive ? 'var(--color-primary)' : 'inherit'
+  });
+  
   return (
     <Layout title="Edit Experiment">
       <div className="card">
@@ -229,160 +247,192 @@ export default function EditExperiment() {
           </div>
         )}
         
-        <form onSubmit={handleSubmit}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-lg)' }}>
-            {/* Left side - Experiment Info */}
-            <div className="card" style={{ padding: 'var(--spacing-md)', backgroundColor: 'var(--color-light)' }}>
-              <h2 style={{ marginTop: 0, marginBottom: 'var(--spacing-md)' }}>Experiment Info</h2>
-              
-              <div className="form-group">
-                <label className="form-label" htmlFor="title">Title</label>
-                <input
-                  type="text"
-                  id="title"
-                  name="title"
-                  className="form-control"
-                  value={experimentData.title || ''}
-                  onChange={handleChange}
-                  required
-                />
+        {/* Tabs navigation */}
+        <div style={tabStyle}>
+          <div 
+            style={tabItemStyle(activeTab === 'basic')}
+            onClick={() => setActiveTab('basic')}
+          >
+            Basic Info
+          </div>
+          <div 
+            style={tabItemStyle(activeTab === 'sections')}
+            onClick={() => setActiveTab('sections')}
+          >
+            Experiment Sections
+          </div>
+        </div>
+        
+        {/* Basic info tab */}
+        {activeTab === 'basic' && (
+          <form onSubmit={handleSubmit}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-lg)' }}>
+              {/* Left side - Experiment Info */}
+              <div className="card" style={{ padding: 'var(--spacing-md)', backgroundColor: 'var(--color-light)' }}>
+                <h2 style={{ marginTop: 0, marginBottom: 'var(--spacing-md)' }}>Experiment Info</h2>
+                
+                <div className="form-group">
+                  <label className="form-label" htmlFor="title">Title</label>
+                  <input
+                    type="text"
+                    id="title"
+                    name="title"
+                    className="form-control"
+                    value={experimentData.title || ''}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+                
+                <div className="form-group">
+                  <label className="form-label" htmlFor="description">Description</label>
+                  <textarea
+                    id="description"
+                    name="description"
+                    className="form-control"
+                    value={experimentData.description || ''}
+                    onChange={handleChange}
+                    rows="3"
+                  />
+                </div>
+                
+                <div className="form-group">
+                  <label className="form-label" htmlFor="status">Status</label>
+                  <select
+                    id="status"
+                    name="status"
+                    className="form-control"
+                    value={experimentData.status || 'draft'}
+                    onChange={handleChange}
+                  >
+                    <option value="draft">Draft</option>
+                    <option value="active">Active</option>
+                    <option value="completed">Completed</option>
+                  </select>
+                </div>
               </div>
               
-              <div className="form-group">
-                <label className="form-label" htmlFor="description">Description</label>
-                <textarea
-                  id="description"
-                  name="description"
-                  className="form-control"
-                  value={experimentData.description || ''}
-                  onChange={handleChange}
-                  rows="3"
-                />
-              </div>
-              
-              <div className="form-group">
-                <label className="form-label" htmlFor="status">Status</label>
-                <select
-                  id="status"
-                  name="status"
-                  className="form-control"
-                  value={experimentData.status || 'draft'}
-                  onChange={handleChange}
-                >
-                  <option value="draft">Draft</option>
-                  <option value="active">Active</option>
-                  <option value="completed">Completed</option>
-                </select>
+              {/* Right side - Participant Groups */}
+              <div className="card" style={{ padding: 'var(--spacing-md)', backgroundColor: 'var(--color-light)' }}>
+                <h2 style={{ marginTop: 0, marginBottom: 'var(--spacing-md)' }}>Participant Groups</h2>
+                
+                {loadingGroups ? (
+                  <p>Loading available groups...</p>
+                ) : (
+                  <>
+                    <div className="form-group">
+                      <label className="form-label" htmlFor="groupSelect">Add Group</label>
+                      <select
+                        id="groupSelect"
+                        className="form-control"
+                        onChange={handleGroupSelect}
+                        value=""
+                      >
+                        <option value="">Select a group to add...</option>
+                        {availableGroups.map(group => (
+                          <option key={group.id} value={group.id}>{group.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    
+                    <div style={{ marginTop: 'var(--spacing-md)' }}>
+                      <label className="form-label">Selected Groups</label>
+                      {selectedGroups.length === 0 ? (
+                        <p style={{ fontStyle: 'italic', color: 'var(--color-gray-dark)' }}>
+                          No groups selected. Select groups from the dropdown above.
+                        </p>
+                      ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-sm)' }}>
+                          {selectedGroups.map(group => (
+                            <div 
+                              key={group.id}
+                              style={{ 
+                                display: 'flex', 
+                                justifyContent: 'space-between', 
+                                alignItems: 'center',
+                                padding: 'var(--spacing-sm)',
+                                backgroundColor: 'white',
+                                borderRadius: 'var(--border-radius)',
+                                border: '1px solid var(--color-gray)'
+                              }}
+                            >
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)' }}>
+                                <span>{group.name}</span>
+                                {group.is_control_group && (
+                                  <span 
+                                    style={{ 
+                                      backgroundColor: 'var(--color-warning)',
+                                      color: 'white',
+                                      padding: '2px 6px',
+                                      borderRadius: '10px',
+                                      fontSize: '0.7rem',
+                                      fontWeight: 'bold'
+                                    }}
+                                  >
+                                    Control
+                                  </span>
+                                )}
+                              </div>
+                              <div style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
+                                <button 
+                                  type="button" 
+                                  className="button"
+                                  style={{ 
+                                    padding: '2px 6px', 
+                                    fontSize: '0.8rem',
+                                    backgroundColor: group.is_control_group ? 'var(--color-gray)' : 'var(--color-warning)'
+                                  }}
+                                  onClick={() => handleToggleControlGroup(group.id)}
+                                >
+                                  {group.is_control_group ? 'Remove Control' : 'Set as Control'}
+                                </button>
+                                <button 
+                                  type="button" 
+                                  className="danger"
+                                  style={{ padding: '2px 6px', fontSize: '0.8rem' }}
+                                  onClick={() => handleRemoveGroup(group.id)}
+                                >
+                                  Remove
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
               </div>
             </div>
             
-            {/* Right side - Participant Groups */}
-            <div className="card" style={{ padding: 'var(--spacing-md)', backgroundColor: 'var(--color-light)' }}>
-              <h2 style={{ marginTop: 0, marginBottom: 'var(--spacing-md)' }}>Participant Groups</h2>
-              
-              {loadingGroups ? (
-                <p>Loading available groups...</p>
-              ) : (
-                <>
-                  <div className="form-group">
-                    <label className="form-label" htmlFor="groupSelect">Add Group</label>
-                    <select
-                      id="groupSelect"
-                      className="form-control"
-                      onChange={handleGroupSelect}
-                      value=""
-                    >
-                      <option value="">Select a group to add...</option>
-                      {availableGroups.map(group => (
-                        <option key={group.id} value={group.id}>{group.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                  
-                  <div style={{ marginTop: 'var(--spacing-md)' }}>
-                    <label className="form-label">Selected Groups</label>
-                    {selectedGroups.length === 0 ? (
-                      <p style={{ fontStyle: 'italic', color: 'var(--color-gray-dark)' }}>
-                        No groups selected. Select groups from the dropdown above.
-                      </p>
-                    ) : (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-sm)' }}>
-                        {selectedGroups.map(group => (
-                          <div 
-                            key={group.id}
-                            style={{ 
-                              display: 'flex', 
-                              justifyContent: 'space-between', 
-                              alignItems: 'center',
-                              padding: 'var(--spacing-sm)',
-                              backgroundColor: 'white',
-                              borderRadius: 'var(--border-radius)',
-                              border: '1px solid var(--color-gray)'
-                            }}
-                          >
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)' }}>
-                              <span>{group.name}</span>
-                              {group.is_control_group && (
-                                <span 
-                                  style={{ 
-                                    backgroundColor: 'var(--color-warning)',
-                                    color: 'white',
-                                    padding: '2px 6px',
-                                    borderRadius: '10px',
-                                    fontSize: '0.7rem',
-                                    fontWeight: 'bold'
-                                  }}
-                                >
-                                  Control
-                                </span>
-                              )}
-                            </div>
-                            <div style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
-                              <button 
-                                type="button" 
-                                className="button"
-                                style={{ 
-                                  padding: '2px 6px', 
-                                  fontSize: '0.8rem',
-                                  backgroundColor: group.is_control_group ? 'var(--color-gray)' : 'var(--color-warning)'
-                                }}
-                                onClick={() => handleToggleControlGroup(group.id)}
-                              >
-                                {group.is_control_group ? 'Remove Control' : 'Set as Control'}
-                              </button>
-                              <button 
-                                type="button" 
-                                className="danger"
-                                style={{ padding: '2px 6px', fontSize: '0.8rem' }}
-                                onClick={() => handleRemoveGroup(group.id)}
-                              >
-                                Remove
-                              </button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </>
-              )}
+            <div style={{ display: 'flex', gap: 'var(--spacing-md)', marginTop: 'var(--spacing-lg)' }}>
+              <button 
+                type="submit" 
+                className="button success" 
+                style={{ flex: 1 }}
+                disabled={saving}
+              >
+                {saving ? 'Saving...' : 'Save Changes'}
+              </button>
+              <Link href="/experiments" className="button" style={{ flex: 1, textAlign: 'center' }}>
+                Cancel
+              </Link>
+            </div>
+          </form>
+        )}
+        
+        {/* Sections tab */}
+        {activeTab === 'sections' && (
+          <div>
+            <ExperimentSections experimentId={id} compact={true} />
+            
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 'var(--spacing-lg)' }}>
+              <Link href="/experiments" className="button">
+                Back to Experiments
+              </Link>
             </div>
           </div>
-          
-          <div style={{ display: 'flex', gap: 'var(--spacing-md)', marginTop: 'var(--spacing-lg)' }}>
-            <button 
-              type="submit" 
-              className="button success" 
-              style={{ flex: 1 }}
-              disabled={saving}
-            >
-              {saving ? 'Saving...' : 'Save Changes'}
-            </button>
-            <Link href="/experiments" className="button" style={{ flex: 1, textAlign: 'center' }}>
-              Cancel
-            </Link>
-          </div>
-        </form>
+        )}
       </div>
     </Layout>
   );
