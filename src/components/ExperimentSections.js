@@ -1702,4 +1702,4 @@ export default function ExperimentSections({ experimentId, compact = true }) {
       )}
     </div>
   );
-}
+}// Added a comment
