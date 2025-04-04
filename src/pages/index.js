@@ -95,54 +95,80 @@ export default function Home() {
               <p style={{ fontSize: '2.5rem', fontWeight: 'bold' }}>${stats.totalValue.toFixed(2)}</p>
             </div>
             
-            <div className="grid grid-3 mb-3">
-              <div className="card" style={{ margin: 0, textAlign: 'center' }}>
-                <h3>Wallets</h3>
-                <p style={{ fontSize: '2rem', fontWeight: 'bold' }}>{stats.totalWallets}</p>
-              </div>
-              <div className="card" style={{ margin: 0, textAlign: 'center' }}>
-                <h3>Assets</h3>
-                <p style={{ fontSize: '2rem', fontWeight: 'bold' }}>{stats.totalAssets}</p>
-              </div>
-              <div className="card" style={{ margin: 0, textAlign: 'center' }}>
-                <h3>Transactions</h3>
-                <p style={{ fontSize: '2rem', fontWeight: 'bold' }}>{stats.totalTransactions}</p>
+            {/* Wallet Section */}
+            <div className="mb-4">
+              <h3 className="mb-2">Your Portfolio</h3>
+              <div className="card">
+                <div className="grid grid-3">
+                  <div style={{ textAlign: 'center' }}>
+                    <h4>Wallets</h4>
+                    <p style={{ fontSize: '1.8rem', fontWeight: 'bold' }}>{stats.totalWallets}</p>
+                    <Link href="/wallets" className="button mt-2" style={{ padding: '5px 10px', fontSize: '0.9rem' }}>Manage Wallets</Link>
+                  </div>
+                  <div style={{ textAlign: 'center' }}>
+                    <h4>Assets</h4>
+                    <p style={{ fontSize: '1.8rem', fontWeight: 'bold' }}>{stats.totalAssets}</p>
+                    <span className="button mt-2" style={{ padding: '5px 10px', fontSize: '0.9rem', backgroundColor: 'var(--color-gray)', cursor: 'default' }}>
+                      {stats.totalAssets === 0 ? 'No Assets' : stats.totalAssets === 1 ? '1 Asset' : `${stats.totalAssets} Assets`}
+                    </span>
+                  </div>
+                  <div style={{ textAlign: 'center' }}>
+                    <h4>Transactions</h4>
+                    <p style={{ fontSize: '1.8rem', fontWeight: 'bold' }}>{stats.totalTransactions}</p>
+                    <Link href="/transactions" className="button mt-2" style={{ padding: '5px 10px', fontSize: '0.9rem' }}>View Transactions</Link>
+                  </div>
+                </div>
               </div>
             </div>
             
-            {stats.topAssets.length > 0 && (
-              <div className="mt-3 mb-4">
-                <h3>Top Assets</h3>
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Symbol</th>
-                      <th>Name</th>
-                      <th className="text-right">Value (USD)</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {stats.topAssets.map(asset => (
-                      <tr key={asset.symbol}>
-                        <td><strong>{asset.symbol}</strong></td>
-                        <td>{asset.name}</td>
-                        <td className="text-right">${asset.value.toFixed(2)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+            {/* Experiments Section */}
+            <div className="mb-4">
+              <h3 className="mb-2">Experiments</h3>
+              <div className="card" style={{ backgroundColor: 'var(--color-light)' }}>
+                <h4>Try New Features</h4>
+                <p className="mb-2">Experimental features are in development and may change.</p>
+                <div className="grid grid-2">
+                  <div className="card" style={{ margin: 0 }}>
+                    <h4>Price Alerts</h4>
+                    <p>Set alerts for price changes</p>
+                    <button className="mt-2" style={{ backgroundColor: 'var(--color-warning)' }}>Coming Soon</button>
+                  </div>
+                  <div className="card" style={{ margin: 0 }}>
+                    <h4>Trading Simulator</h4>
+                    <p>Practice trading strategies without risk</p>
+                    <button className="mt-2" style={{ backgroundColor: 'var(--color-warning)' }}>Coming Soon</button>
+                  </div>
+                </div>
               </div>
-            )}
+            </div>
+            
+            {/* Groups Section */}
+            <div className="mb-4">
+              <h3 className="mb-2">Trading Groups</h3>
+              <div className="card" style={{ backgroundColor: 'var(--color-light)' }}>
+                <h4>Join the Community</h4>
+                <p className="mb-2">Connect with other traders and share insights.</p>
+                <div className="grid grid-2">
+                  <div className="card" style={{ margin: 0 }}>
+                    <h4>Beginners Circle</h4>
+                    <p>Learn the basics of crypto trading</p>
+                    <p className="mt-1" style={{ fontSize: '0.9rem', color: 'var(--color-gray-dark)' }}>12 members</p>
+                    <button className="mt-2" style={{ backgroundColor: 'var(--color-info)' }}>Join Group</button>
+                  </div>
+                  <div className="card" style={{ margin: 0 }}>
+                    <h4>Advanced Traders</h4>
+                    <p>Discuss advanced trading strategies</p>
+                    <p className="mt-1" style={{ fontSize: '0.9rem', color: 'var(--color-gray-dark)' }}>8 members</p>
+                    <button className="mt-2" style={{ backgroundColor: 'var(--color-info)' }}>Join Group</button>
+                  </div>
+                </div>
+              </div>
+            </div>
           </>
         )}
 
-        <div className="mt-3">
-          <Link href="/wallets" className="button">
-            Manage Wallets
-          </Link>
-          <Link href="/transactions" className="button" style={{ marginLeft: 'var(--spacing-md)' }}>
-            View Transactions
-          </Link>
+        <div className="mt-4 text-center">
+          <p style={{ fontSize: '0.9rem', color: 'var(--color-gray-dark)' }}>Crypto Tracker Simple - Track your investments with ease</p>
         </div>
       </div>
     </Layout>
