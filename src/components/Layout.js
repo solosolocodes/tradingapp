@@ -19,6 +19,7 @@ export default function Layout({ children, title = 'Crypto Tracker' }) {
               <li><Link href="/">Home</Link></li>
               <li><Link href="/wallets">Wallets</Link></li>
               <li><Link href="/transactions">Transactions</Link></li>
+              <li><Link href="/experiments">Experiments</Link></li>
             </ul>
           </nav>
         </div>

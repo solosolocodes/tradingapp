@@ -155,18 +155,19 @@ export default function Home() {
                 {/* Experiments */}
                 <div className="card" style={{ padding: 'var(--spacing-md)', backgroundColor: 'var(--color-light)', marginBottom: 'var(--spacing-md)' }}>
                   <h3 style={{ margin: 0, marginBottom: 'var(--spacing-sm)', fontSize: '1.2rem' }}>Experiments</h3>
-                  <p style={{ fontSize: '0.9rem', margin: 0, marginBottom: 'var(--spacing-md)' }}>Try new features</p>
+                  <p style={{ fontSize: '0.9rem', margin: 0, marginBottom: 'var(--spacing-md)' }}>Economics behavior scenarios</p>
                   
                   <div style={{ marginBottom: 'var(--spacing-md)' }}>
-                    <h4 style={{ margin: 0, fontSize: '1rem' }}>Price Alerts</h4>
-                    <p style={{ margin: '3px 0', fontSize: '0.9rem' }}>Get notified of changes</p>
-                    <button className="mt-1" style={{ padding: '3px 8px', fontSize: '0.8rem', backgroundColor: 'var(--color-warning)' }}>Soon</button>
+                    <p style={{ margin: '3px 0', fontSize: '0.9rem' }}>Configure behavioral economics experiments with scenarios, intro screens, and surveys.</p>
                   </div>
                   
-                  <div>
-                    <h4 style={{ margin: 0, fontSize: '1rem' }}>Trading Simulator</h4>
-                    <p style={{ margin: '3px 0', fontSize: '0.9rem' }}>Practice strategies</p>
-                    <button className="mt-1" style={{ padding: '3px 8px', fontSize: '0.8rem', backgroundColor: 'var(--color-warning)' }}>Soon</button>
+                  <div style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
+                    <Link href="/experiments/create" className="button" style={{ flex: 1, textAlign: 'center', padding: '5px 10px', fontSize: '0.9rem', backgroundColor: 'var(--color-success)' }}>
+                      Create Experiment
+                    </Link>
+                    <Link href="/experiments" className="button" style={{ flex: 1, textAlign: 'center', padding: '5px 10px', fontSize: '0.9rem' }}>
+                      View All
+                    </Link>
                   </div>
                 </div>
                 
