@@ -207,6 +207,8 @@ export default function ViewGroup() {
                   <tr>
                     <th>Name</th>
                     <th>Email</th>
+                    <th>Phone</th>
+                    <th>Telegram</th>
                     <th>Unique ID</th>
                     <th>Status</th>
                     <th>Created</th>
@@ -217,7 +219,13 @@ export default function ViewGroup() {
                     <tr key={participant.id}>
                       <td>{participant.name || '-'}</td>
                       <td>{participant.email || '-'}</td>
-                      <td>{participant.unique_id}</td>
+                      <td>{participant.phone || '-'}</td>
+                      <td>{participant.telegram_id || '-'}</td>
+                      <td>
+                        <span style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>
+                          {participant.unique_id}
+                        </span>
+                      </td>
                       <td>{participant.is_active ? 'Active' : 'Inactive'}</td>
                       <td>{new Date(participant.created_at).toLocaleDateString()}</td>
                     </tr>

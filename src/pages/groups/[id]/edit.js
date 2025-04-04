@@ -93,7 +93,7 @@ export default function EditGroup() {
   const addParticipant = () => {
     setParticipants([
       ...participants,
-      { name: '', email: '', unique_id: '', group_id: id, isNew: true }
+      { name: '', email: '', phone: '', telegram_id: '', unique_id: '', group_id: id, isNew: true }
     ]);
   };
   
@@ -141,12 +141,8 @@ export default function EditGroup() {
         p.name.trim() !== '' || p.email.trim() !== '' || p.unique_id.trim() !== ''
       );
       
-      // Validate participant data
-      validParticipants.forEach(p => {
-        if (!p.unique_id) {
-          throw new Error('All participants must have a unique ID');
-        }
-      });
+      // We don't need to validate unique_id here as Supabase will 
+      // generate them automatically using our SQL trigger if not provided
       
       // Update group in database
       const { error: groupError } = await supabase
@@ -189,7 +185,15 @@ export default function EditGroup() {
       if (newParticipants.length > 0) {
         const { error: newParticipantsError } = await supabase
           .from('participants')
-          .insert(newParticipants);
+          .insert(newParticipants.map(p => ({
+            group_id: id,
+            name: p.name,
+            email: p.email,
+            phone: p.phone || null,
+            telegram_id: p.telegram_id || null,
+            unique_id: p.unique_id || null, // Will be auto-generated if null
+            is_active: true
+          })));
         
         if (newParticipantsError) throw newParticipantsError;
       }
@@ -201,7 +205,9 @@ export default function EditGroup() {
           .update({
             name: participant.name,
             email: participant.email,
-            unique_id: participant.unique_id,
+            phone: participant.phone || null,
+            telegram_id: participant.telegram_id || null,
+            unique_id: participant.unique_id || null,
             is_active: participant.is_active,
             updated_at: participant.updated_at
           })
@@ -321,7 +327,7 @@ export default function EditGroup() {
               {/* Header row */}
               <div style={{ 
                 display: 'grid', 
-                gridTemplateColumns: '1fr 1.5fr 1fr 40px', 
+                gridTemplateColumns: '1fr 1.5fr 1fr 1fr 0.8fr 40px', 
                 gap: '8px',
                 marginBottom: '5px',
                 fontWeight: 'bold',
@@ -333,7 +339,9 @@ export default function EditGroup() {
               }}>
                 <div>Name</div>
                 <div>Email</div>
-                <div>Unique ID</div>
+                <div>Phone</div>
+                <div>Telegram</div>
+                <div>ID (Auto)</div>
                 <div></div>
               </div>
               
@@ -341,7 +349,7 @@ export default function EditGroup() {
               {participants.map((participant, index) => (
                 <div key={index} style={{ 
                   display: 'grid',
-                  gridTemplateColumns: '1fr 1.5fr 1fr 40px',
+                  gridTemplateColumns: '1fr 1.5fr 1fr 1fr 0.8fr 40px',
                   gap: '8px',
                   marginBottom: '5px'
                 }}>
@@ -364,10 +372,28 @@ export default function EditGroup() {
                   />
                   
                   <input
+                    type="tel"
+                    value={participant.phone || ''}
+                    onChange={(e) => handleParticipantChange(index, 'phone', e.target.value)}
+                    placeholder="Phone"
+                    className="form-control"
+                    style={{ padding: '5px', fontSize: '0.9rem' }}
+                  />
+                  
+                  <input
+                    type="text"
+                    value={participant.telegram_id || ''}
+                    onChange={(e) => handleParticipantChange(index, 'telegram_id', e.target.value)}
+                    placeholder="@username"
+                    className="form-control"
+                    style={{ padding: '5px', fontSize: '0.9rem' }}
+                  />
+                  
+                  <input
                     type="text"
                     value={participant.unique_id || ''}
                     onChange={(e) => handleParticipantChange(index, 'unique_id', e.target.value)}
-                    placeholder="ID"
+                    placeholder="Auto"
                     className="form-control"
                     style={{ padding: '5px', fontSize: '0.9rem' }}
                   />

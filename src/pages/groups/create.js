@@ -16,7 +16,7 @@ export default function CreateGroup() {
   });
   
   const [participants, setParticipants] = useState([
-    { name: '', email: '', unique_id: '', isNew: true }
+    { name: '', email: '', phone: '', telegram_id: '', unique_id: '', isNew: true }
   ]);
   
   const handleChange = (e) => {
@@ -39,7 +39,7 @@ export default function CreateGroup() {
   const addParticipant = () => {
     setParticipants([
       ...participants,
-      { name: '', email: '', unique_id: '', isNew: true }
+      { name: '', email: '', phone: '', telegram_id: '', unique_id: '', isNew: true }
     ]);
   };
   
@@ -64,12 +64,8 @@ export default function CreateGroup() {
         p.name.trim() !== '' || p.email.trim() !== '' || p.unique_id.trim() !== ''
       );
       
-      // Validate participant data
-      validParticipants.forEach(p => {
-        if (!p.unique_id) {
-          throw new Error('All participants must have a unique ID');
-        }
-      });
+      // We don't need to validate unique_id here as Supabase will 
+      // generate them automatically using our SQL trigger if not provided
       
       // Create group in database
       const { data: groupData, error: groupError } = await supabase
@@ -97,7 +93,9 @@ export default function CreateGroup() {
               group_id: groupId,
               name: p.name,
               email: p.email,
-              unique_id: p.unique_id,
+              phone: p.phone,
+              telegram_id: p.telegram_id,
+              unique_id: p.unique_id || null,  // Will be auto-generated if null
               is_active: true
             }))
           );
@@ -203,7 +201,7 @@ export default function CreateGroup() {
               {/* Header row */}
               <div style={{ 
                 display: 'grid', 
-                gridTemplateColumns: '1fr 1.5fr 1fr 40px', 
+                gridTemplateColumns: '1fr 1.5fr 1fr 1fr 0.8fr 40px', 
                 gap: '8px',
                 marginBottom: '5px',
                 fontWeight: 'bold',
@@ -211,7 +209,9 @@ export default function CreateGroup() {
               }}>
                 <div>Name</div>
                 <div>Email</div>
-                <div>Unique ID</div>
+                <div>Phone</div>
+                <div>Telegram</div>
+                <div>ID (Auto)</div>
                 <div></div>
               </div>
               
@@ -219,7 +219,7 @@ export default function CreateGroup() {
               {participants.map((participant, index) => (
                 <div key={index} style={{ 
                   display: 'grid',
-                  gridTemplateColumns: '1fr 1.5fr 1fr 40px',
+                  gridTemplateColumns: '1fr 1.5fr 1fr 1fr 0.8fr 40px',
                   gap: '8px',
                   marginBottom: '5px'
                 }}>
@@ -242,10 +242,28 @@ export default function CreateGroup() {
                   />
                   
                   <input
+                    type="tel"
+                    value={participant.phone || ''}
+                    onChange={(e) => handleParticipantChange(index, 'phone', e.target.value)}
+                    placeholder="Phone"
+                    className="form-control"
+                    style={{ padding: '5px', fontSize: '0.9rem' }}
+                  />
+                  
+                  <input
                     type="text"
-                    value={participant.unique_id}
+                    value={participant.telegram_id || ''}
+                    onChange={(e) => handleParticipantChange(index, 'telegram_id', e.target.value)}
+                    placeholder="@username"
+                    className="form-control"
+                    style={{ padding: '5px', fontSize: '0.9rem' }}
+                  />
+                  
+                  <input
+                    type="text"
+                    value={participant.unique_id || ''}
                     onChange={(e) => handleParticipantChange(index, 'unique_id', e.target.value)}
-                    placeholder="ID"
+                    placeholder="Auto"
                     className="form-control"
                     style={{ padding: '5px', fontSize: '0.9rem' }}
                   />
