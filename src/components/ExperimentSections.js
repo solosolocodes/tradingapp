@@ -1162,84 +1162,7 @@ export default function ExperimentSections({ experimentId, compact = true }) {
                       {section.type === SECTION_TYPES.SCENARIO && (
                         <div>
                           <div className="form-group">
-                            <label className="form-label" style={{ fontSize: '0.85rem' }}>Scenario Title</label>
-                            <input
-                              type="text"
-                              className="form-control"
-                              value={section.title}
-                              onChange={(e) => {
-                                const updatedSections = [...sections];
-                                const sectionIndex = updatedSections.findIndex(s => s.id === section.id);
-                                updatedSections[sectionIndex] = { ...updatedSections[sectionIndex], title: e.target.value };
-                                setSections(updatedSections);
-                                
-                                // Update in database
-                                supabase
-                                  .from('experiment_scenarios')
-                                  .update({ title: e.target.value })
-                                  .eq('id', section.originalId)
-                                  .then(({ error }) => {
-                                    if (error) console.error('Error updating scenario title:', error);
-                                  });
-                              }}
-                              style={{ fontSize: '0.85rem' }}
-                            />
-                          </div>
-                          
-                          <div className="form-group">
-                            <label className="form-label" style={{ fontSize: '0.85rem' }}>Description</label>
-                            <textarea
-                              className="form-control"
-                              value={section.description}
-                              onChange={(e) => {
-                                const updatedSections = [...sections];
-                                const sectionIndex = updatedSections.findIndex(s => s.id === section.id);
-                                updatedSections[sectionIndex] = { ...updatedSections[sectionIndex], description: e.target.value };
-                                setSections(updatedSections);
-                                
-                                // Update in database
-                                supabase
-                                  .from('experiment_scenarios')
-                                  .update({ description: e.target.value })
-                                  .eq('id', section.originalId)
-                                  .then(({ error }) => {
-                                    if (error) console.error('Error updating scenario description:', error);
-                                  });
-                              }}
-                              rows="2"
-                              style={{ fontSize: '0.85rem' }}
-                            />
-                          </div>
-                          
-                          <div className="form-group">
-                            <label className="form-label" style={{ fontSize: '0.85rem' }}>Duration (seconds)</label>
-                            <input
-                              type="number"
-                              className="form-control"
-                              value={section.duration}
-                              onChange={(e) => {
-                                const updatedSections = [...sections];
-                                const sectionIndex = updatedSections.findIndex(s => s.id === section.id);
-                                updatedSections[sectionIndex] = { ...updatedSections[sectionIndex], duration: e.target.value };
-                                setSections(updatedSections);
-                                
-                                // Update in database
-                                supabase
-                                  .from('experiment_scenarios')
-                                  .update({ duration: e.target.value })
-                                  .eq('id', section.originalId)
-                                  .then(({ error }) => {
-                                    if (error) console.error('Error updating scenario duration:', error);
-                                  });
-                              }}
-                              min="5"
-                              max="600"
-                              style={{ fontSize: '0.85rem' }}
-                            />
-                          </div>
-                          
-                          <div className="form-group">
-                            <label className="form-label" style={{ fontSize: '0.85rem' }}>Change Scenario</label>
+                            <label className="form-label" style={{ fontSize: '0.85rem' }}>Select Scenario Template</label>
                             <select
                               className="form-control"
                               value=""
@@ -1295,6 +1218,50 @@ export default function ExperimentSections({ experimentId, compact = true }) {
                                 <option key={scenario.id} value={scenario.id}>{scenario.title}</option>
                               ))}
                             </select>
+                            <p style={{ fontSize: '0.8rem', color: 'var(--color-gray-dark)', marginTop: '4px' }}>
+                              Selecting a scenario will replace all scenario content with the template.
+                            </p>
+                          </div>
+                          
+                          {/* Scenario Details (Read-only) */}
+                          <div style={{ 
+                            backgroundColor: 'var(--color-light)', 
+                            padding: '10px', 
+                            borderRadius: 'var(--border-radius)',
+                            marginTop: '10px'
+                          }}>
+                            <h4 style={{ fontSize: '0.9rem', marginTop: 0, marginBottom: '8px' }}>Scenario Details</h4>
+                            
+                            <div style={{ marginBottom: '8px' }}>
+                              <div style={{ fontSize: '0.8rem', fontWeight: 'bold', marginBottom: '2px' }}>Title:</div>
+                              <div style={{ 
+                                fontSize: '0.85rem', 
+                                padding: '6px', 
+                                backgroundColor: 'white', 
+                                borderRadius: '4px', 
+                                border: '1px solid var(--color-gray)'
+                              }}>
+                                {section.title}
+                              </div>
+                            </div>
+                            
+                            <div style={{ marginBottom: '8px' }}>
+                              <div style={{ fontSize: '0.8rem', fontWeight: 'bold', marginBottom: '2px' }}>Description:</div>
+                              <div style={{ 
+                                fontSize: '0.85rem', 
+                                padding: '6px', 
+                                backgroundColor: 'white', 
+                                borderRadius: '4px', 
+                                border: '1px solid var(--color-gray)',
+                                minHeight: '60px'
+                              }}>
+                                {section.description}
+                              </div>
+                            </div>
+                            
+                            <div style={{ marginBottom: '8px' }}>
+                              <div style={{ fontSize: '0.8rem', fontWeight: 'bold', marginBottom: '2px' }}>Duration: {section.duration} seconds</div>
+                            </div>
                           </div>
                           
                           {/* Response Options */}
