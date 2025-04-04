@@ -288,7 +288,7 @@ export default function EditScenario() {
     if (!file) return;
     
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       try {
         const csvData = event.target.result;
         const lines = csvData.split('\n');
