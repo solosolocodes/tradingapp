@@ -309,7 +309,7 @@ export default function CreateScenario() {
         // Update prices if we have valid data
         if (newPrices.length > 0) {
           setAssetPrices(newPrices);
-          alert(`Successfully imported ${newPrices.length} price points from CSV.`);
+          alert(`Successfully imported ${newPrices.length} price points from CSV. They will be saved when you create the scenario.`);
         } else {
           alert('No valid price data found in the CSV. Please check the format and try again.');
         }

@@ -352,8 +352,46 @@ export default function EditScenario() {
         
         // Update prices if we have valid data
         if (newPrices.length > 0) {
+          // First update local state
           setAssetPrices(newPrices);
-          alert(`Successfully imported ${newPrices.length} price points from CSV.`);
+          
+          // Then save to database immediately
+          setSaving(true);
+          try {
+            // Delete existing asset prices
+            const { error: deleteError } = await supabase
+              .from('scenario_asset_prices')
+              .delete()
+              .eq('scenario_id', id);
+            
+            if (deleteError) {
+              throw deleteError;
+            }
+            
+            // Insert updated asset prices
+            const { error: pricesError } = await supabase
+              .from('scenario_asset_prices')
+              .insert(
+                newPrices.map(price => ({
+                  scenario_id: id,
+                  asset_symbol: price.asset_symbol,
+                  asset_name: price.asset_name,
+                  round_number: price.round_number,
+                  price: price.price
+                }))
+              );
+            
+            if (pricesError) {
+              throw pricesError;
+            }
+            
+            alert(`Successfully imported and saved ${newPrices.length} price points from CSV.`);
+          } catch (error) {
+            console.error('Error saving imported prices:', error);
+            alert(`Error saving imported prices: ${error.message}`);
+          } finally {
+            setSaving(false);
+          }
         } else {
           alert('No valid price data found in the CSV. Please check the format and try again.');
         }
@@ -641,13 +679,13 @@ export default function EditScenario() {
                 <h3 style={{ margin: 0, fontSize: '1.1rem' }}>
                   Asset Prices by Round
                 </h3>
-                <div style={{ display: 'flex', gap: '10px' }}>
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                   <button 
                     type="button" 
                     className="button" 
                     style={{ padding: '3px 8px', fontSize: '0.8rem', backgroundColor: 'var(--color-info)' }}
                     onClick={() => generateCsvTemplate()}
-                    disabled={!scenario.wallet_id || walletAssets.length === 0}
+                    disabled={!scenario.wallet_id || walletAssets.length === 0 || saving}
                   >
                     Export Template CSV
                   </button>
@@ -656,21 +694,26 @@ export default function EditScenario() {
                     style={{ 
                       padding: '3px 8px', 
                       fontSize: '0.8rem', 
-                      backgroundColor: 'var(--color-primary)',
+                      backgroundColor: saving ? 'var(--color-gray)' : 'var(--color-primary)',
                       margin: 0, 
                       display: 'inline-block',
-                      cursor: 'pointer'
+                      cursor: saving ? 'not-allowed' : 'pointer'
                     }}
                   >
-                    Import CSV
+                    {saving ? 'Importing...' : 'Import CSV'}
                     <input
                       type="file"
                       accept=".csv"
                       style={{ display: 'none' }}
                       onChange={handleCsvImport}
-                      disabled={!scenario.wallet_id || walletAssets.length === 0}
+                      disabled={!scenario.wallet_id || walletAssets.length === 0 || saving}
                     />
                   </label>
+                  {saving && (
+                    <span style={{ fontSize: '0.85rem', color: 'var(--color-primary)', marginLeft: '5px' }}>
+                      Saving data...
+                    </span>
+                  )}
                 </div>
               </div>
               
