@@ -7,14 +7,21 @@ import ExperimentSections from '../../../components/ExperimentSections';
 
 export default function EditExperiment() {
   const router = useRouter();
-  const { id } = router.query;
+  const { id, tab } = router.query;
   
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [availableGroups, setAvailableGroups] = useState([]);
   const [loadingGroups, setLoadingGroups] = useState(true);
-  const [activeTab, setActiveTab] = useState('sections');
+  const [activeTab, setActiveTab] = useState('basic');
+  
+  // Set activeTab based on URL parameter when it changes
+  useEffect(() => {
+    if (tab === 'sections') {
+      setActiveTab('sections');
+    }
+  }, [tab]);
   
   // Main experiment data
   const [experimentData, setExperimentData] = useState({
@@ -214,6 +221,19 @@ export default function EditExperiment() {
     );
   }
   
+  // Handle tab changes
+  const handleTabChange = (tabName) => {
+    setActiveTab(tabName);
+    
+    // Update URL without full page reload
+    const newUrl = new URL(window.location.href);
+    newUrl.searchParams.set('tab', tabName);
+    window.history.pushState({}, '', newUrl);
+    
+    // Scroll to top for better user experience
+    window.scrollTo(0, 0);
+  };
+  
   // Tabs bar style
   const tabStyle = {
     display: 'flex',
@@ -251,13 +271,13 @@ export default function EditExperiment() {
         <div style={tabStyle}>
           <div 
             style={tabItemStyle(activeTab === 'basic')}
-            onClick={() => setActiveTab('basic')}
+            onClick={() => handleTabChange('basic')}
           >
             Basic Info
           </div>
           <div 
             style={tabItemStyle(activeTab === 'sections')}
-            onClick={() => setActiveTab('sections')}
+            onClick={() => handleTabChange('sections')}
           >
             Experiment Sections
           </div>
@@ -431,10 +451,7 @@ export default function EditExperiment() {
                 type="button" 
                 className="button success" 
                 style={{ flex: 1 }}
-                onClick={() => {
-                  setActiveTab('basic');
-                  window.scrollTo(0, 0);
-                }}
+                onClick={() => handleTabChange('basic')}
               >
                 Continue to Basic Info
               </button>
