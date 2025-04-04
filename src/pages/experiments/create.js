@@ -363,8 +363,8 @@ export default function CreateExperiment() {
       // Create default sections
       await createDefaultSections(experimentId);
       
-      // Redirect to experiment edit page with sections tab active
-      router.push(`/experiments/${experimentId}/edit?tab=sections`);
+      // Redirect to experiment edit page to see and edit experiment content
+      router.push(`/experiments/${experimentId}/edit`);
       
     } catch (error) {
       console.error('Error creating experiment:', error);

@@ -7,21 +7,13 @@ import ExperimentSections from '../../../components/ExperimentSections';
 
 export default function EditExperiment() {
   const router = useRouter();
-  const { id, tab } = router.query;
+  const { id } = router.query;
   
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [availableGroups, setAvailableGroups] = useState([]);
   const [loadingGroups, setLoadingGroups] = useState(true);
-  const [activeTab, setActiveTab] = useState('sections');
-  
-  // Set activeTab based on URL parameter when it changes
-  useEffect(() => {
-    if (tab === 'sections') {
-      setActiveTab('sections');
-    }
-  }, [tab]);
   
   // Main experiment data
   const [experimentData, setExperimentData] = useState({
@@ -221,33 +213,6 @@ export default function EditExperiment() {
     );
   }
   
-  // Handle tab changes
-  const handleTabChange = (tabName) => {
-    setActiveTab(tabName);
-    
-    // Update URL without full page reload
-    const newUrl = new URL(window.location.href);
-    newUrl.searchParams.set('tab', tabName);
-    window.history.pushState({}, '', newUrl);
-    
-    // Scroll to top for better user experience
-    window.scrollTo(0, 0);
-  };
-  
-  // Tabs bar style
-  const tabStyle = {
-    display: 'flex',
-    borderBottom: '1px solid var(--color-gray)',
-    marginBottom: 'var(--spacing-md)'
-  };
-  
-  const tabItemStyle = (isActive) => ({
-    padding: '8px 16px',
-    cursor: 'pointer',
-    fontWeight: isActive ? 'bold' : 'normal',
-    borderBottom: isActive ? '3px solid var(--color-primary)' : 'none',
-    color: isActive ? 'var(--color-primary)' : 'inherit'
-  });
   
   return (
     <Layout title="Edit Experiment">
@@ -267,29 +232,14 @@ export default function EditExperiment() {
           </div>
         )}
         
-        {/* Tabs navigation */}
-        <div style={tabStyle}>
-          <div 
-            style={tabItemStyle(activeTab === 'basic')}
-            onClick={() => handleTabChange('basic')}
-          >
-            Basic Info
-          </div>
-          <div 
-            style={tabItemStyle(activeTab === 'sections')}
-            onClick={() => handleTabChange('sections')}
-          >
-            Experiment Sections
-          </div>
-        </div>
-        
-        {/* Basic info tab */}
-        {activeTab === 'basic' && (
-          <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit}>
+          <div className="card" style={{ marginBottom: 'var(--spacing-md)', padding: 'var(--spacing-md)', backgroundColor: 'var(--color-light)' }}>
+            <h2 style={{ marginTop: 0, marginBottom: 'var(--spacing-md)' }}>Experiment Settings</h2>
+            
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-lg)' }}>
               {/* Left side - Experiment Info */}
-              <div className="card" style={{ padding: 'var(--spacing-md)', backgroundColor: 'var(--color-light)' }}>
-                <h2 style={{ marginTop: 0, marginBottom: 'var(--spacing-md)' }}>Experiment Info</h2>
+              <div>
+                <h3 style={{ fontSize: '1.1rem', marginBottom: 'var(--spacing-sm)' }}>Basic Information</h3>
                 
                 <div className="form-group">
                   <label className="form-label" htmlFor="title">Title</label>
@@ -333,8 +283,8 @@ export default function EditExperiment() {
               </div>
               
               {/* Right side - Participant Groups */}
-              <div className="card" style={{ padding: 'var(--spacing-md)', backgroundColor: 'var(--color-light)' }}>
-                <h2 style={{ marginTop: 0, marginBottom: 'var(--spacing-md)' }}>Participant Groups</h2>
+              <div>
+                <h3 style={{ fontSize: '1.1rem', marginBottom: 'var(--spacing-sm)' }}>Participant Groups</h3>
                 
                 {loadingGroups ? (
                   <p>Loading available groups...</p>
@@ -355,14 +305,14 @@ export default function EditExperiment() {
                       </select>
                     </div>
                     
-                    <div style={{ marginTop: 'var(--spacing-md)' }}>
+                    <div style={{ marginTop: 'var(--spacing-sm)' }}>
                       <label className="form-label">Selected Groups</label>
                       {selectedGroups.length === 0 ? (
-                        <p style={{ fontStyle: 'italic', color: 'var(--color-gray-dark)' }}>
-                          No groups selected. Select groups from the dropdown above.
+                        <p style={{ fontStyle: 'italic', color: 'var(--color-gray-dark)', fontSize: '0.9rem' }}>
+                          No groups selected.
                         </p>
                       ) : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-sm)' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                           {selectedGroups.map(group => (
                             <div 
                               key={group.id}
@@ -370,21 +320,22 @@ export default function EditExperiment() {
                                 display: 'flex', 
                                 justifyContent: 'space-between', 
                                 alignItems: 'center',
-                                padding: 'var(--spacing-sm)',
+                                padding: '4px 8px',
                                 backgroundColor: 'white',
                                 borderRadius: 'var(--border-radius)',
-                                border: '1px solid var(--color-gray)'
+                                border: '1px solid var(--color-gray)',
+                                fontSize: '0.9rem'
                               }}
                             >
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                 <span>{group.name}</span>
                                 {group.is_control_group && (
                                   <span 
                                     style={{ 
                                       backgroundColor: 'var(--color-warning)',
                                       color: 'white',
-                                      padding: '2px 6px',
-                                      borderRadius: '10px',
+                                      padding: '1px 4px',
+                                      borderRadius: '8px',
                                       fontSize: '0.7rem',
                                       fontWeight: 'bold'
                                     }}
@@ -393,14 +344,15 @@ export default function EditExperiment() {
                                   </span>
                                 )}
                               </div>
-                              <div style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
+                              <div style={{ display: 'flex', gap: '4px' }}>
                                 <button 
                                   type="button" 
                                   className="button"
                                   style={{ 
-                                    padding: '2px 6px', 
-                                    fontSize: '0.8rem',
-                                    backgroundColor: group.is_control_group ? 'var(--color-gray)' : 'var(--color-warning)'
+                                    padding: '1px 4px', 
+                                    fontSize: '0.7rem',
+                                    backgroundColor: group.is_control_group ? 'var(--color-gray)' : 'var(--color-warning)',
+                                    minHeight: '20px'
                                   }}
                                   onClick={() => handleToggleControlGroup(group.id)}
                                 >
@@ -409,10 +361,10 @@ export default function EditExperiment() {
                                 <button 
                                   type="button" 
                                   className="danger"
-                                  style={{ padding: '2px 6px', fontSize: '0.8rem' }}
+                                  style={{ padding: '1px 4px', fontSize: '0.7rem', minHeight: '20px' }}
                                   onClick={() => handleRemoveGroup(group.id)}
                                 >
-                                  Remove
+                                  ×
                                 </button>
                               </div>
                             </div>
@@ -425,42 +377,34 @@ export default function EditExperiment() {
               </div>
             </div>
             
-            <div style={{ display: 'flex', gap: 'var(--spacing-md)', marginTop: 'var(--spacing-lg)' }}>
+            <div style={{ display: 'flex', gap: 'var(--spacing-md)', marginTop: 'var(--spacing-md)' }}>
               <button 
                 type="submit" 
                 className="button success" 
                 style={{ flex: 1 }}
                 disabled={saving}
               >
-                {saving ? 'Saving...' : 'Save Changes'}
+                {saving ? 'Saving...' : 'Save Settings'}
               </button>
-              <Link href="/experiments" className="button" style={{ flex: 1, textAlign: 'center' }}>
-                Cancel
-              </Link>
-            </div>
-          </form>
-        )}
-        
-        {/* Sections tab */}
-        {activeTab === 'sections' && (
-          <div>
-            <ExperimentSections experimentId={id} compact={true} />
-            
-            <div style={{ display: 'flex', gap: 'var(--spacing-md)', marginTop: 'var(--spacing-lg)' }}>
-              <button 
-                type="button" 
-                className="button success" 
-                style={{ flex: 1 }}
-                onClick={() => handleTabChange('basic')}
-              >
-                Continue to Basic Info
-              </button>
-              <Link href="/experiments" className="button" style={{ flex: 1, textAlign: 'center' }}>
-                Back to Experiments
-              </Link>
             </div>
           </div>
-        )}
+        </form>
+        
+        {/* Experiment Sections */}
+        <div className="card" style={{ marginBottom: 'var(--spacing-md)', padding: 'var(--spacing-md)', backgroundColor: 'var(--color-light)' }}>
+          <h2 style={{ marginTop: 0, marginBottom: 'var(--spacing-md)' }}>Experiment Content</h2>
+          <p style={{ marginBottom: 'var(--spacing-md)', fontSize: '0.9rem' }}>
+            Organize the flow of your experiment by adding, editing and reordering sections below.
+          </p>
+          
+          <ExperimentSections experimentId={id} compact={true} />
+          
+          <div style={{ display: 'flex', gap: 'var(--spacing-md)', marginTop: 'var(--spacing-md)', justifyContent: 'flex-end' }}>
+            <Link href="/experiments" className="button">
+              Back to Experiments
+            </Link>
+          </div>
+        </div>
       </div>
     </Layout>
   );
