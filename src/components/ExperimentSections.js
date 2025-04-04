@@ -963,120 +963,737 @@ export default function ExperimentSections({ experimentId, compact = true }) {
                 <div 
                   key={section.id}
                   style={{ 
-                    display: 'flex', 
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: compact ? '4px 8px' : 'var(--spacing-sm)',
                     backgroundColor: 'white',
                     borderRadius: 'var(--border-radius)',
                     border: '1px solid var(--color-gray)',
                     borderLeft: `3px solid ${typeStyles.color}`,
-                    marginBottom: compact ? '2px' : '4px'
+                    marginBottom: compact ? '4px' : '6px',
+                    overflow: 'hidden'
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', overflow: 'hidden' }}>
-                    <span style={{ 
-                      display: 'inline-flex',
+                  {/* Section Header */}
+                  <div 
+                    style={{ 
+                      display: 'flex', 
                       alignItems: 'center',
-                      justifyContent: 'center',
-                      width: '18px',
-                      height: '18px',
-                      borderRadius: '50%',
-                      backgroundColor: typeStyles.color,
-                      color: 'white',
-                      fontWeight: 'bold',
-                      fontSize: '10px',
-                      flexShrink: 0
-                    }}>
-                      {index + 1}
-                    </span>
+                      justifyContent: 'space-between',
+                      padding: compact ? '4px 8px' : 'var(--spacing-sm)',
+                      backgroundColor: 'white',
+                      cursor: 'pointer',
+                      borderBottom: editingSectionId === section.id ? '1px solid var(--color-gray)' : 'none'
+                    }}
+                    onClick={() => setEditingSectionId(editingSectionId === section.id ? null : section.id)}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', overflow: 'hidden' }}>
+                      <span style={{ 
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        width: '18px',
+                        height: '18px',
+                        borderRadius: '50%',
+                        backgroundColor: typeStyles.color,
+                        color: 'white',
+                        fontWeight: 'bold',
+                        fontSize: '10px',
+                        flexShrink: 0
+                      }}>
+                        {index + 1}
+                      </span>
+                      
+                      <span style={{ 
+                        backgroundColor: 'var(--color-light)',
+                        padding: '1px 4px',
+                        borderRadius: '8px',
+                        fontSize: '0.7rem',
+                        whiteSpace: 'nowrap'
+                      }}>
+                        {typeStyles.icon}
+                      </span>
+                      
+                      <span style={{ 
+                        fontWeight: '500',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        fontSize: '0.85rem'
+                      }}>
+                        {section.title}
+                      </span>
+                    </div>
                     
-                    <span style={{ 
-                      backgroundColor: 'var(--color-light)',
-                      padding: '1px 4px',
-                      borderRadius: '8px',
-                      fontSize: '0.7rem',
-                      whiteSpace: 'nowrap'
-                    }}>
-                      {typeStyles.icon}
-                    </span>
-                    
-                    <span style={{ 
-                      fontWeight: '500',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                      fontSize: '0.85rem'
-                    }}>
-                      {section.title}
-                    </span>
+                    <div style={{ display: 'flex', gap: '2px', alignItems: 'center' }}>
+                      <button
+                        type="button"
+                        className="button"
+                        onClick={(e) => {
+                          e.stopPropagation(); 
+                          handleMoveSection(section.id, 'up');
+                        }}
+                        disabled={index === 0}
+                        style={{ 
+                          padding: '0px 3px', 
+                          fontSize: '0.7rem',
+                          minWidth: '18px',
+                          height: '18px',
+                          lineHeight: '1'
+                        }}
+                        title="Move Up"
+                      >
+                        ↑
+                      </button>
+                      <button
+                        type="button"
+                        className="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleMoveSection(section.id, 'down');
+                        }}
+                        disabled={index === sections.length - 1}
+                        style={{ 
+                          padding: '0px 3px', 
+                          fontSize: '0.7rem',
+                          minWidth: '18px',
+                          height: '18px',
+                          lineHeight: '1'
+                        }}
+                        title="Move Down"
+                      >
+                        ↓
+                      </button>
+                      <button
+                        type="button"
+                        className="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditingSectionId(editingSectionId === section.id ? null : section.id);
+                        }}
+                        style={{ 
+                          padding: '0px 3px', 
+                          fontSize: '0.7rem',
+                          backgroundColor: editingSectionId === section.id ? 'var(--color-success)' : 'var(--color-warning)',
+                          minWidth: '18px',
+                          height: '18px',
+                          lineHeight: '1'
+                        }}
+                        title={editingSectionId === section.id ? "Done Editing" : "Edit Section"}
+                      >
+                        {editingSectionId === section.id ? "✓" : "✏️"}
+                      </button>
+                      <button
+                        type="button"
+                        className="danger"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteSection(section.id, section.type, section.originalId);
+                        }}
+                        style={{ 
+                          padding: '0px 3px', 
+                          fontSize: '0.7rem',
+                          minWidth: '18px',
+                          height: '18px',
+                          lineHeight: '1'
+                        }}
+                        title="Delete Section"
+                      >
+                        ×
+                      </button>
+                    </div>
                   </div>
                   
-                  <div style={{ display: 'flex', gap: '2px', alignItems: 'center' }}>
-                    <button
-                      type="button"
-                      className="button"
-                      onClick={() => handleMoveSection(section.id, 'up')}
-                      disabled={index === 0}
-                      style={{ 
-                        padding: '0px 3px', 
-                        fontSize: '0.7rem',
-                        minWidth: '18px',
-                        height: '18px',
-                        lineHeight: '1'
-                      }}
-                      title="Move Up"
-                    >
-                      ↑
-                    </button>
-                    <button
-                      type="button"
-                      className="button"
-                      onClick={() => handleMoveSection(section.id, 'down')}
-                      disabled={index === sections.length - 1}
-                      style={{ 
-                        padding: '0px 3px', 
-                        fontSize: '0.7rem',
-                        minWidth: '18px',
-                        height: '18px',
-                        lineHeight: '1'
-                      }}
-                      title="Move Down"
-                    >
-                      ↓
-                    </button>
-                    <button
-                      type="button"
-                      className="button"
-                      onClick={() => setEditingSectionId(section.id)}
-                      style={{ 
-                        padding: '0px 3px', 
-                        fontSize: '0.7rem',
-                        backgroundColor: 'var(--color-warning)',
-                        minWidth: '18px',
-                        height: '18px',
-                        lineHeight: '1'
-                      }}
-                      title="Edit Section"
-                    >
-                      ✏️
-                    </button>
-                    <button
-                      type="button"
-                      className="danger"
-                      onClick={() => handleDeleteSection(section.id, section.type, section.originalId)}
-                      style={{ 
-                        padding: '0px 3px', 
-                        fontSize: '0.7rem',
-                        minWidth: '18px',
-                        height: '18px',
-                        lineHeight: '1'
-                      }}
-                      title="Delete Section"
-                    >
-                      ×
-                    </button>
-                  </div>
+                  {/* Expandable Edit Area */}
+                  {editingSectionId === section.id && (
+                    <div style={{ padding: '8px', backgroundColor: 'var(--color-light)' }}>
+                      {/* Different edit forms based on section type */}
+                      {section.type === SECTION_TYPES.INFO && (
+                        <div>
+                          <div className="form-group">
+                            <label className="form-label" style={{ fontSize: '0.85rem' }}>Title</label>
+                            <input
+                              type="text"
+                              className="form-control"
+                              value={section.title}
+                              onChange={(e) => {
+                                const updatedSections = [...sections];
+                                const sectionIndex = updatedSections.findIndex(s => s.id === section.id);
+                                updatedSections[sectionIndex] = { ...updatedSections[sectionIndex], title: e.target.value };
+                                setSections(updatedSections);
+                                
+                                // Update in database
+                                supabase
+                                  .from('experiment_intro_screens')
+                                  .update({ title: e.target.value })
+                                  .eq('id', section.originalId)
+                                  .then(({ error }) => {
+                                    if (error) console.error('Error updating title:', error);
+                                  });
+                              }}
+                              style={{ fontSize: '0.85rem' }}
+                            />
+                          </div>
+                          
+                          <div className="form-group">
+                            <label className="form-label" style={{ fontSize: '0.85rem' }}>Content</label>
+                            <textarea
+                              className="form-control"
+                              value={section.content}
+                              onChange={(e) => {
+                                const updatedSections = [...sections];
+                                const sectionIndex = updatedSections.findIndex(s => s.id === section.id);
+                                updatedSections[sectionIndex] = { ...updatedSections[sectionIndex], content: e.target.value };
+                                setSections(updatedSections);
+                                
+                                // Update in database
+                                supabase
+                                  .from('experiment_intro_screens')
+                                  .update({ content: e.target.value })
+                                  .eq('id', section.originalId)
+                                  .then(({ error }) => {
+                                    if (error) console.error('Error updating content:', error);
+                                  });
+                              }}
+                              rows="3"
+                              style={{ fontSize: '0.85rem' }}
+                            />
+                          </div>
+                        </div>
+                      )}
+                      
+                      {section.type === SECTION_TYPES.SCENARIO && (
+                        <div>
+                          <div className="form-group">
+                            <label className="form-label" style={{ fontSize: '0.85rem' }}>Scenario Title</label>
+                            <input
+                              type="text"
+                              className="form-control"
+                              value={section.title}
+                              onChange={(e) => {
+                                const updatedSections = [...sections];
+                                const sectionIndex = updatedSections.findIndex(s => s.id === section.id);
+                                updatedSections[sectionIndex] = { ...updatedSections[sectionIndex], title: e.target.value };
+                                setSections(updatedSections);
+                                
+                                // Update in database
+                                supabase
+                                  .from('experiment_scenarios')
+                                  .update({ title: e.target.value })
+                                  .eq('id', section.originalId)
+                                  .then(({ error }) => {
+                                    if (error) console.error('Error updating scenario title:', error);
+                                  });
+                              }}
+                              style={{ fontSize: '0.85rem' }}
+                            />
+                          </div>
+                          
+                          <div className="form-group">
+                            <label className="form-label" style={{ fontSize: '0.85rem' }}>Description</label>
+                            <textarea
+                              className="form-control"
+                              value={section.description}
+                              onChange={(e) => {
+                                const updatedSections = [...sections];
+                                const sectionIndex = updatedSections.findIndex(s => s.id === section.id);
+                                updatedSections[sectionIndex] = { ...updatedSections[sectionIndex], description: e.target.value };
+                                setSections(updatedSections);
+                                
+                                // Update in database
+                                supabase
+                                  .from('experiment_scenarios')
+                                  .update({ description: e.target.value })
+                                  .eq('id', section.originalId)
+                                  .then(({ error }) => {
+                                    if (error) console.error('Error updating scenario description:', error);
+                                  });
+                              }}
+                              rows="2"
+                              style={{ fontSize: '0.85rem' }}
+                            />
+                          </div>
+                          
+                          <div className="form-group">
+                            <label className="form-label" style={{ fontSize: '0.85rem' }}>Duration (seconds)</label>
+                            <input
+                              type="number"
+                              className="form-control"
+                              value={section.duration}
+                              onChange={(e) => {
+                                const updatedSections = [...sections];
+                                const sectionIndex = updatedSections.findIndex(s => s.id === section.id);
+                                updatedSections[sectionIndex] = { ...updatedSections[sectionIndex], duration: e.target.value };
+                                setSections(updatedSections);
+                                
+                                // Update in database
+                                supabase
+                                  .from('experiment_scenarios')
+                                  .update({ duration: e.target.value })
+                                  .eq('id', section.originalId)
+                                  .then(({ error }) => {
+                                    if (error) console.error('Error updating scenario duration:', error);
+                                  });
+                              }}
+                              min="5"
+                              max="600"
+                              style={{ fontSize: '0.85rem' }}
+                            />
+                          </div>
+                          
+                          <div className="form-group">
+                            <label className="form-label" style={{ fontSize: '0.85rem' }}>Change Scenario</label>
+                            <select
+                              className="form-control"
+                              value=""
+                              onChange={async (e) => {
+                                if (!e.target.value) return;
+                                
+                                try {
+                                  // Get template details
+                                  const { data: template, error: templateError } = await supabase
+                                    .from('scenario_templates')
+                                    .select('title, description, duration, option_template')
+                                    .eq('id', e.target.value)
+                                    .single();
+                                  
+                                  if (templateError) throw templateError;
+                                  
+                                  // Update in database
+                                  const { error: updateError } = await supabase
+                                    .from('experiment_scenarios')
+                                    .update({
+                                      title: template.title,
+                                      description: template.description,
+                                      duration: template.duration,
+                                      options: template.option_template || []
+                                    })
+                                    .eq('id', section.originalId);
+                                  
+                                  if (updateError) throw updateError;
+                                  
+                                  // Update state
+                                  const updatedSections = [...sections];
+                                  const sectionIndex = updatedSections.findIndex(s => s.id === section.id);
+                                  updatedSections[sectionIndex] = { 
+                                    ...updatedSections[sectionIndex], 
+                                    title: template.title,
+                                    description: template.description,
+                                    duration: template.duration,
+                                    options: template.option_template || []
+                                  };
+                                  setSections(updatedSections);
+                                  
+                                  // Reset select
+                                  e.target.value = '';
+                                } catch (error) {
+                                  console.error('Error changing scenario template:', error);
+                                  setError(`Failed to change scenario: ${error.message}`);
+                                }
+                              }}
+                              style={{ fontSize: '0.85rem' }}
+                            >
+                              <option value="">Select a scenario template...</option>
+                              {availableScenarios.map(scenario => (
+                                <option key={scenario.id} value={scenario.id}>{scenario.title}</option>
+                              ))}
+                            </select>
+                          </div>
+                          
+                          {/* Response Options */}
+                          <div style={{ marginTop: 'var(--spacing-sm)' }}>
+                            <label className="form-label" style={{ fontSize: '0.85rem' }}>Response Options</label>
+                            {(!section.options || section.options.length === 0) ? (
+                              <p style={{ fontSize: '0.8rem', fontStyle: 'italic' }}>No response options defined.</p>
+                            ) : (
+                              <div style={{ 
+                                maxHeight: '120px', 
+                                overflowY: 'auto', 
+                                border: '1px solid var(--color-gray)', 
+                                borderRadius: 'var(--border-radius)',
+                                backgroundColor: 'white',
+                                padding: '4px'
+                              }}>
+                                {section.options.map((option, optionIndex) => (
+                                  <div 
+                                    key={optionIndex}
+                                    style={{ 
+                                      display: 'flex', 
+                                      justifyContent: 'space-between',
+                                      fontSize: '0.8rem',
+                                      padding: '2px 4px',
+                                      backgroundColor: optionIndex % 2 === 0 ? 'white' : 'var(--color-light)',
+                                      borderRadius: '4px',
+                                      marginBottom: '2px'
+                                    }}
+                                  >
+                                    <div>{option.text}</div>
+                                    <div style={{ 
+                                      color: 'var(--color-gray-dark)', 
+                                      backgroundColor: 'var(--color-light)',
+                                      padding: '0 4px',
+                                      borderRadius: '4px',
+                                      fontSize: '0.75rem'
+                                    }}>
+                                      {option.value}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {section.type === SECTION_TYPES.BREAK && (
+                        <div>
+                          <div className="form-group">
+                            <label className="form-label" style={{ fontSize: '0.85rem' }}>Title</label>
+                            <input
+                              type="text"
+                              className="form-control"
+                              value={section.title}
+                              onChange={(e) => {
+                                const updatedSections = [...sections];
+                                const sectionIndex = updatedSections.findIndex(s => s.id === section.id);
+                                updatedSections[sectionIndex] = { ...updatedSections[sectionIndex], title: e.target.value };
+                                setSections(updatedSections);
+                                
+                                // Update in database
+                                supabase
+                                  .from('experiment_break_screens')
+                                  .update({ title: e.target.value })
+                                  .eq('id', section.originalId)
+                                  .then(({ error }) => {
+                                    if (error) console.error('Error updating break title:', error);
+                                  });
+                              }}
+                              style={{ fontSize: '0.85rem' }}
+                            />
+                          </div>
+                          
+                          <div className="form-group">
+                            <label className="form-label" style={{ fontSize: '0.85rem' }}>Content</label>
+                            <textarea
+                              className="form-control"
+                              value={section.content}
+                              onChange={(e) => {
+                                const updatedSections = [...sections];
+                                const sectionIndex = updatedSections.findIndex(s => s.id === section.id);
+                                updatedSections[sectionIndex] = { ...updatedSections[sectionIndex], content: e.target.value };
+                                setSections(updatedSections);
+                                
+                                // Update in database
+                                supabase
+                                  .from('experiment_break_screens')
+                                  .update({ content: e.target.value })
+                                  .eq('id', section.originalId)
+                                  .then(({ error }) => {
+                                    if (error) console.error('Error updating break content:', error);
+                                  });
+                              }}
+                              rows="3"
+                              style={{ fontSize: '0.85rem' }}
+                            />
+                          </div>
+                        </div>
+                      )}
+                      
+                      {section.type === SECTION_TYPES.SURVEY && (
+                        <div>
+                          <div className="form-group">
+                            <label className="form-label" style={{ fontSize: '0.85rem' }}>Survey Type</label>
+                            <div style={{ 
+                              display: 'inline-block', 
+                              padding: '3px 8px', 
+                              backgroundColor: section.is_demographic ? 'var(--color-info)' : 'var(--color-success)',
+                              color: 'white',
+                              borderRadius: 'var(--border-radius)',
+                              fontSize: '0.8rem'
+                            }}>
+                              {section.is_demographic ? 'Demographic Survey' : 'Custom Survey'}
+                            </div>
+                          </div>
+                          
+                          {/* Survey Questions */}
+                          <div style={{ marginTop: 'var(--spacing-sm)' }}>
+                            <label className="form-label" style={{ fontSize: '0.85rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <span>Questions ({section.questions ? section.questions.length : 0})</span>
+                              <button
+                                type="button"
+                                className="button"
+                                onClick={() => {
+                                  // Add new question logic
+                                  const newQuestion = {
+                                    experiment_id: experimentId,
+                                    question: 'New Question',
+                                    type: 'multiple_choice',
+                                    options: ['Option A', 'Option B', 'Option C'],
+                                    order_index: section.order_index,
+                                    is_demographic: section.is_demographic
+                                  };
+                                  
+                                  supabase
+                                    .from('experiment_survey_questions')
+                                    .insert(newQuestion)
+                                    .select()
+                                    .single()
+                                    .then(({ data, error }) => {
+                                      if (error) {
+                                        console.error('Error adding question:', error);
+                                        return;
+                                      }
+                                      
+                                      // Update state
+                                      const updatedSections = [...sections];
+                                      const sectionIndex = updatedSections.findIndex(s => s.id === section.id);
+                                      
+                                      // Add new question to section
+                                      const updatedQuestions = [
+                                        ...(updatedSections[sectionIndex].questions || []),
+                                        {
+                                          id: data.id,
+                                          question: data.question,
+                                          type: data.type,
+                                          options: data.options
+                                        }
+                                      ];
+                                      
+                                      updatedSections[sectionIndex].questions = updatedQuestions;
+                                      setSections(updatedSections);
+                                    });
+                                }}
+                                style={{ 
+                                  padding: '1px 4px', 
+                                  fontSize: '0.7rem',
+                                  minHeight: '20px',
+                                  backgroundColor: 'var(--color-success)'
+                                }}
+                              >
+                                + Add Question
+                              </button>
+                            </label>
+                            
+                            {(!section.questions || section.questions.length === 0) ? (
+                              <p style={{ fontSize: '0.8rem', fontStyle: 'italic' }}>No questions defined. Click "Add Question" to add a question.</p>
+                            ) : (
+                              <div style={{ 
+                                maxHeight: '250px', 
+                                overflowY: 'auto', 
+                                border: '1px solid var(--color-gray)', 
+                                borderRadius: 'var(--border-radius)',
+                                backgroundColor: 'white'
+                              }}>
+                                {section.questions.map((question, questionIndex) => (
+                                  <div 
+                                    key={questionIndex}
+                                    style={{ 
+                                      padding: '6px',
+                                      borderBottom: questionIndex < section.questions.length - 1 ? '1px solid var(--color-gray)' : 'none',
+                                      backgroundColor: 'white'
+                                    }}
+                                  >
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                                      <input
+                                        type="text"
+                                        className="form-control"
+                                        value={question.question}
+                                        onChange={(e) => {
+                                          // Update question text in state
+                                          const updatedSections = [...sections];
+                                          const sectionIndex = updatedSections.findIndex(s => s.id === section.id);
+                                          updatedSections[sectionIndex].questions[questionIndex].question = e.target.value;
+                                          setSections(updatedSections);
+                                          
+                                          // Update in database
+                                          supabase
+                                            .from('experiment_survey_questions')
+                                            .update({ question: e.target.value })
+                                            .eq('id', question.id)
+                                            .then(({ error }) => {
+                                              if (error) console.error('Error updating question:', error);
+                                            });
+                                        }}
+                                        style={{ fontSize: '0.85rem', flex: 1, marginRight: '4px' }}
+                                      />
+                                      
+                                      <select
+                                        className="form-control"
+                                        value={question.type}
+                                        onChange={(e) => {
+                                          // Update question type in state
+                                          const updatedSections = [...sections];
+                                          const sectionIndex = updatedSections.findIndex(s => s.id === section.id);
+                                          updatedSections[sectionIndex].questions[questionIndex].type = e.target.value;
+                                          setSections(updatedSections);
+                                          
+                                          // Update in database
+                                          supabase
+                                            .from('experiment_survey_questions')
+                                            .update({ type: e.target.value })
+                                            .eq('id', question.id)
+                                            .then(({ error }) => {
+                                              if (error) console.error('Error updating question type:', error);
+                                            });
+                                        }}
+                                        style={{ fontSize: '0.85rem', width: '120px' }}
+                                      >
+                                        <option value="text">Text Input</option>
+                                        <option value="multiple_choice">Multiple Choice</option>
+                                        <option value="number">Number</option>
+                                      </select>
+                                      
+                                      <button
+                                        type="button"
+                                        className="danger"
+                                        onClick={() => {
+                                          // Delete question
+                                          if (!confirm(`Delete question: "${question.question}"?`)) return;
+                                          
+                                          supabase
+                                            .from('experiment_survey_questions')
+                                            .delete()
+                                            .eq('id', question.id)
+                                            .then(({ error }) => {
+                                              if (error) {
+                                                console.error('Error deleting question:', error);
+                                                return;
+                                              }
+                                              
+                                              // Update state
+                                              const updatedSections = [...sections];
+                                              const sectionIndex = updatedSections.findIndex(s => s.id === section.id);
+                                              updatedSections[sectionIndex].questions = updatedSections[sectionIndex].questions.filter(
+                                                (_, i) => i !== questionIndex
+                                              );
+                                              setSections(updatedSections);
+                                            });
+                                        }}
+                                        style={{ 
+                                          padding: '0px 4px', 
+                                          fontSize: '0.7rem',
+                                          minWidth: '20px',
+                                          marginLeft: '4px'
+                                        }}
+                                        title="Delete Question"
+                                      >
+                                        ×
+                                      </button>
+                                    </div>
+                                    
+                                    {/* Options for multiple choice */}
+                                    {question.type === 'multiple_choice' && (
+                                      <div style={{ marginTop: '4px' }}>
+                                        <label className="form-label" style={{ fontSize: '0.8rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                          <span>Options</span>
+                                          <button
+                                            type="button"
+                                            className="button"
+                                            onClick={() => {
+                                              // Add new option
+                                              const updatedSections = [...sections];
+                                              const sectionIndex = updatedSections.findIndex(s => s.id === section.id);
+                                              const options = [...(updatedSections[sectionIndex].questions[questionIndex].options || []), 'New Option'];
+                                              
+                                              // Update in state
+                                              updatedSections[sectionIndex].questions[questionIndex].options = options;
+                                              setSections(updatedSections);
+                                              
+                                              // Update in database
+                                              supabase
+                                                .from('experiment_survey_questions')
+                                                .update({ options })
+                                                .eq('id', question.id)
+                                                .then(({ error }) => {
+                                                  if (error) console.error('Error adding option:', error);
+                                                });
+                                            }}
+                                            style={{ 
+                                              padding: '0px 4px', 
+                                              fontSize: '0.7rem',
+                                              minHeight: '18px'
+                                            }}
+                                          >
+                                            +
+                                          </button>
+                                        </label>
+                                        
+                                        <div style={{ 
+                                          display: 'flex', 
+                                          flexDirection: 'column', 
+                                          gap: '2px',
+                                          marginTop: '2px'
+                                        }}>
+                                          {(question.options || []).map((option, optionIndex) => (
+                                            <div key={optionIndex} style={{ display: 'flex', gap: '4px' }}>
+                                              <input
+                                                type="text"
+                                                className="form-control"
+                                                value={option}
+                                                onChange={(e) => {
+                                                  // Update option in state
+                                                  const updatedSections = [...sections];
+                                                  const sectionIndex = updatedSections.findIndex(s => s.id === section.id);
+                                                  const options = [...updatedSections[sectionIndex].questions[questionIndex].options];
+                                                  options[optionIndex] = e.target.value;
+                                                  
+                                                  updatedSections[sectionIndex].questions[questionIndex].options = options;
+                                                  setSections(updatedSections);
+                                                  
+                                                  // Update in database
+                                                  supabase
+                                                    .from('experiment_survey_questions')
+                                                    .update({ options })
+                                                    .eq('id', question.id)
+                                                    .then(({ error }) => {
+                                                      if (error) console.error('Error updating option:', error);
+                                                    });
+                                                }}
+                                                style={{ fontSize: '0.8rem', flex: 1 }}
+                                              />
+                                              <button
+                                                type="button"
+                                                className="danger"
+                                                onClick={() => {
+                                                  // Remove option
+                                                  const updatedSections = [...sections];
+                                                  const sectionIndex = updatedSections.findIndex(s => s.id === section.id);
+                                                  const options = updatedSections[sectionIndex].questions[questionIndex].options.filter(
+                                                    (_, i) => i !== optionIndex
+                                                  );
+                                                  
+                                                  updatedSections[sectionIndex].questions[questionIndex].options = options;
+                                                  setSections(updatedSections);
+                                                  
+                                                  // Update in database
+                                                  supabase
+                                                    .from('experiment_survey_questions')
+                                                    .update({ options })
+                                                    .eq('id', question.id)
+                                                    .then(({ error }) => {
+                                                      if (error) console.error('Error removing option:', error);
+                                                    });
+                                                }}
+                                                style={{ 
+                                                  padding: '0px 4px', 
+                                                  fontSize: '0.7rem',
+                                                  minWidth: '20px'
+                                                }}
+                                                title="Remove Option"
+                                              >
+                                                ×
+                                              </button>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               );
             })}
