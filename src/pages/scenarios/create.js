@@ -458,27 +458,36 @@ export default function CreateScenario() {
                   <table style={{ width: '100%', margin: 0 }}>
                     <thead>
                       <tr>
-                        <th style={{ textAlign: 'left' }}>Asset</th>
-                        {Array.from({ length: scenario.rounds }, (_, i) => i + 1).map(round => (
-                          <th key={round}>Round {round}</th>
+                        <th style={{ textAlign: 'left' }}>Round</th>
+                        {/* Asset symbols as column headers */}
+                        {walletAssets.map(asset => (
+                          <th key={asset.id} style={{ textAlign: 'center' }}>
+                            <div style={{ fontWeight: 'bold' }}>{asset.asset_symbol}</div>
+                            <div style={{ fontSize: '0.8rem', fontWeight: 'normal' }}>{asset.name}</div>
+                          </th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
-                      {/* Group prices by asset symbol */}
-                      {walletAssets.map(asset => (
-                        <tr key={asset.id}>
-                          <td style={{ fontWeight: 'bold' }}>
-                            {asset.asset_symbol} ({asset.name})
+                      {/* Each row represents a round */}
+                      {Array.from({ length: scenario.rounds }, (_, i) => i + 1).map(round => (
+                        <tr key={round}>
+                          <td style={{ 
+                            fontWeight: 'bold', 
+                            backgroundColor: 'var(--color-light)',
+                            padding: '8px'
+                          }}>
+                            Round {round}
                           </td>
-                          {Array.from({ length: scenario.rounds }, (_, i) => i + 1).map(round => {
+                          {/* Each cell is an asset price for this round */}
+                          {walletAssets.map(asset => {
                             const price = assetPrices.find(
                               p => p.asset_symbol === asset.asset_symbol && p.round_number === round
                             )?.price || 0;
                             
                             return (
-                              <td key={round}>
-                                <div style={{ display: 'flex', alignItems: 'center' }}>
+                              <td key={asset.id} style={{ textAlign: 'center' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                   <span style={{ marginRight: '5px' }}>$</span>
                                   <input
                                     type="number"
@@ -490,7 +499,12 @@ export default function CreateScenario() {
                                       parseFloat(e.target.value) || 0
                                     )}
                                     className="form-control"
-                                    style={{ padding: '5px', fontSize: '0.85rem' }}
+                                    style={{ 
+                                      padding: '5px', 
+                                      fontSize: '0.85rem',
+                                      textAlign: 'right',
+                                      width: '100px' 
+                                    }}
                                     required
                                   />
                                 </div>

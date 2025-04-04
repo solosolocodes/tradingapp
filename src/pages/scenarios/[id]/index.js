@@ -177,36 +177,44 @@ export default function ViewScenario() {
               <table style={{ width: '100%', margin: 0 }}>
                 <thead>
                   <tr>
-                    <th style={{ textAlign: 'left' }}>Asset</th>
-                    {Array.from({ length: scenario.rounds }, (_, i) => i + 1).map(round => (
-                      <th key={round}>Round {round}</th>
-                    ))}
+                    <th style={{ textAlign: 'left' }}>Round</th>
+                    {/* Asset symbols as column headers */}
+                    {[...new Set(assetPrices.map(price => price.asset_symbol))].map(symbol => {
+                      const assetName = assetPrices.find(p => p.asset_symbol === symbol)?.asset_name || symbol;
+                      return (
+                        <th key={symbol} style={{ textAlign: 'center' }}>
+                          <div style={{ fontWeight: 'bold' }}>{symbol}</div>
+                          <div style={{ fontSize: '0.8rem', fontWeight: 'normal' }}>{assetName}</div>
+                        </th>
+                      );
+                    })}
                   </tr>
                 </thead>
                 <tbody>
-                  {/* Group prices by asset symbol */}
-                  {[...new Set(assetPrices.map(price => price.asset_symbol))].map(symbol => {
-                    const assetName = assetPrices.find(p => p.asset_symbol === symbol)?.asset_name || symbol;
-                    
-                    return (
-                      <tr key={symbol}>
-                        <td style={{ fontWeight: 'bold' }}>
-                          {symbol} ({assetName})
-                        </td>
-                        {Array.from({ length: scenario.rounds }, (_, i) => i + 1).map(round => {
-                          const price = assetPrices.find(
-                            p => p.asset_symbol === symbol && p.round_number === round
-                          )?.price || '-';
-                          
-                          return (
-                            <td key={round}>
-                              ${typeof price === 'number' ? price.toFixed(2) : price}
-                            </td>
-                          );
-                        })}
-                      </tr>
-                    );
-                  })}
+                  {/* Each row represents a round */}
+                  {Array.from({ length: scenario.rounds }, (_, i) => i + 1).map(round => (
+                    <tr key={round}>
+                      <td style={{ 
+                        fontWeight: 'bold', 
+                        backgroundColor: 'var(--color-light)',
+                        padding: '8px'
+                      }}>
+                        Round {round}
+                      </td>
+                      {/* Each cell is an asset price for this round */}
+                      {[...new Set(assetPrices.map(price => price.asset_symbol))].map(symbol => {
+                        const price = assetPrices.find(
+                          p => p.asset_symbol === symbol && p.round_number === round
+                        )?.price || '-';
+                        
+                        return (
+                          <td key={symbol} style={{ textAlign: 'center' }}>
+                            ${typeof price === 'number' ? price.toFixed(2) : price}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>

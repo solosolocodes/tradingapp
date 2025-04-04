@@ -519,49 +519,61 @@ export default function EditScenario() {
                   <table style={{ width: '100%', margin: 0 }}>
                     <thead>
                       <tr>
-                        <th style={{ textAlign: 'left' }}>Asset</th>
-                        {Array.from({ length: scenario.rounds }, (_, i) => i + 1).map(round => (
-                          <th key={round}>Round {round}</th>
+                        <th style={{ textAlign: 'left' }}>Round</th>
+                        {/* Asset symbols as column headers */}
+                        {walletAssets.map(asset => (
+                          <th key={asset.id} style={{ textAlign: 'center' }}>
+                            <div style={{ fontWeight: 'bold' }}>{asset.asset_symbol}</div>
+                            <div style={{ fontSize: '0.8rem', fontWeight: 'normal' }}>{asset.name}</div>
+                          </th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
-                      {/* Group prices by asset symbol */}
-                      {walletAssets.map(asset => {
-                        return (
-                          <tr key={asset.id}>
-                            <td style={{ fontWeight: 'bold' }}>
-                              {asset.asset_symbol} ({asset.name})
-                            </td>
-                            {Array.from({ length: scenario.rounds }, (_, i) => i + 1).map(round => {
-                              const price = assetPrices.find(
-                                p => p.asset_symbol === asset.asset_symbol && p.round_number === round
-                              )?.price || asset.price_spot;
-                              
-                              return (
-                                <td key={round}>
-                                  <div style={{ display: 'flex', alignItems: 'center' }}>
-                                    <span style={{ marginRight: '5px' }}>$</span>
-                                    <input
-                                      type="number"
-                                      step="0.01"
-                                      value={price}
-                                      onChange={(e) => handlePriceChange(
-                                        asset.asset_symbol, 
-                                        round, 
-                                        parseFloat(e.target.value) || 0
-                                      )}
-                                      className="form-control"
-                                      style={{ padding: '5px', fontSize: '0.85rem' }}
-                                      required
-                                    />
-                                  </div>
-                                </td>
-                              );
-                            })}
-                          </tr>
-                        );
-                      })}
+                      {/* Each row represents a round */}
+                      {Array.from({ length: scenario.rounds }, (_, i) => i + 1).map(round => (
+                        <tr key={round}>
+                          <td style={{ 
+                            fontWeight: 'bold', 
+                            backgroundColor: 'var(--color-light)',
+                            padding: '8px'
+                          }}>
+                            Round {round}
+                          </td>
+                          {/* Each cell is an asset price for this round */}
+                          {walletAssets.map(asset => {
+                            const price = assetPrices.find(
+                              p => p.asset_symbol === asset.asset_symbol && p.round_number === round
+                            )?.price || asset.price_spot;
+                            
+                            return (
+                              <td key={asset.id} style={{ textAlign: 'center' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                  <span style={{ marginRight: '5px' }}>$</span>
+                                  <input
+                                    type="number"
+                                    step="0.01"
+                                    value={price}
+                                    onChange={(e) => handlePriceChange(
+                                      asset.asset_symbol, 
+                                      round, 
+                                      parseFloat(e.target.value) || 0
+                                    )}
+                                    className="form-control"
+                                    style={{ 
+                                      padding: '5px', 
+                                      fontSize: '0.85rem',
+                                      textAlign: 'right',
+                                      width: '100px' 
+                                    }}
+                                    required
+                                  />
+                                </div>
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      ))}
                     </tbody>
                   </table>
                 </div>
