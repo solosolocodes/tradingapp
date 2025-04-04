@@ -13,29 +13,11 @@ export default function EditExperiment() {
   const [error, setError] = useState(null);
   
   // Main experiment data
-  const [experiment, setExperiment] = useState({
+  const [experimentData, setExperimentData] = useState({
     title: '',
     description: '',
     status: 'draft'
   });
-  
-  // Intro screens
-  const [introScreens, setIntroScreens] = useState([]);
-  
-  // Scenarios
-  const [scenarios, setScenarios] = useState([]);
-  
-  // Available scenario templates
-  const [availableScenarios, setAvailableScenarios] = useState([]);
-  
-  // Available wallets for selection
-  const [availableWallets, setAvailableWallets] = useState([]);
-  
-  // Break screens
-  const [breakScreens, setBreakScreens] = useState([]);
-  
-  // Survey questions
-  const [surveyQuestions, setSurveyQuestions] = useState([]);
   
   useEffect(() => {
     if (id) {
@@ -61,66 +43,7 @@ export default function EditExperiment() {
         return;
       }
       
-      setExperiment(experimentData);
-      
-      // Fetch scenario templates
-      const { data: templateData, error: scenariosTemplateError } = await supabase
-        .from('scenario_templates')
-        .select('id, title, description, duration, wallet_id, rounds, option_template')
-        .eq('is_active', true)
-        .order('title');
-        
-      if (scenariosTemplateError) throw scenariosTemplateError;
-      setAvailableScenarios(templateData || []);
-      
-      // Fetch wallets for scenario assignment
-      const { data: walletsData, error: walletsError } = await supabase
-        .from('wallets')
-        .select('id, name')
-        .order('name');
-        
-      if (walletsError) throw walletsError;
-      setAvailableWallets(walletsData || []);
-      
-      // Fetch intro screens
-      const { data: introData, error: introError } = await supabase
-        .from('experiment_intro_screens')
-        .select('*')
-        .eq('experiment_id', id)
-        .order('order_index');
-      
-      if (introError) throw introError;
-      setIntroScreens(introData || []);
-      
-      // Fetch scenarios
-      const { data: scenariosData, error: scenariosError } = await supabase
-        .from('experiment_scenarios')
-        .select('*')
-        .eq('experiment_id', id)
-        .order('order_index');
-      
-      if (scenariosError) throw scenariosError;
-      setScenarios(scenariosData || []);
-      
-      // Fetch break screens
-      const { data: breaksData, error: breaksError } = await supabase
-        .from('experiment_break_screens')
-        .select('*')
-        .eq('experiment_id', id)
-        .order('order_index');
-      
-      if (breaksError) throw breaksError;
-      setBreakScreens(breaksData || []);
-      
-      // Fetch survey questions
-      const { data: questionsData, error: questionsError } = await supabase
-        .from('experiment_survey_questions')
-        .select('*')
-        .eq('experiment_id', id)
-        .order('order_index');
-      
-      if (questionsError) throw questionsError;
-      setSurveyQuestions(questionsData || []);
+      setExperimentData(experimentData);
       
     } catch (error) {
       console.error('Error fetching experiment data:', error);
@@ -130,223 +53,13 @@ export default function EditExperiment() {
     }
   };
   
-  const handleExperimentChange = (e) => {
+  // Handle form field changes
+  const handleChange = (e) => {
     const { name, value } = e.target;
-    setExperiment({
-      ...experiment,
+    setExperimentData({
+      ...experimentData,
       [name]: value
     });
-  };
-  
-  // Handler for intro screens
-  const handleIntroScreenChange = (index, field, value) => {
-    const newIntroScreens = [...introScreens];
-    newIntroScreens[index] = {
-      ...newIntroScreens[index],
-      [field]: value
-    };
-    setIntroScreens(newIntroScreens);
-  };
-  
-  const addIntroScreen = () => {
-    setIntroScreens([
-      ...introScreens,
-      { 
-        experiment_id: id,
-        title: `Intro ${introScreens.length + 1}`, 
-        content: '',
-        order_index: introScreens.length
-      }
-    ]);
-  };
-  
-  const removeIntroScreen = (index) => {
-    if (introScreens.length > 1) {
-      setIntroScreens(introScreens.filter((_, i) => i !== index));
-    }
-  };
-  
-  // Handler for scenarios
-  const handleScenarioChange = (index, field, value) => {
-    const newScenarios = [...scenarios];
-    newScenarios[index] = {
-      ...newScenarios[index],
-      [field]: value
-    };
-    setScenarios(newScenarios);
-  };
-  
-  const handleScenarioOptionChange = (scenarioIndex, optionIndex, field, value) => {
-    const newScenarios = [...scenarios];
-    const options = [...newScenarios[scenarioIndex].options];
-    options[optionIndex] = {
-      ...options[optionIndex],
-      [field]: value
-    };
-    newScenarios[scenarioIndex].options = options;
-    setScenarios(newScenarios);
-  };
-  
-  // Handle selecting a scenario template
-  const handleScenarioTemplateChange = (index, templateId) => {
-    const newScenarios = [...scenarios];
-    
-    if (templateId === '') {
-      // If no template selected, just clear the template ID
-      newScenarios[index] = {
-        ...newScenarios[index],
-        scenario_template_id: null
-      };
-    } else {
-      // Find the selected template
-      const template = availableScenarios.find(s => s.id === templateId);
-      
-      if (template) {
-        // Update scenario with template data
-        newScenarios[index] = {
-          ...newScenarios[index],
-          title: template.title,
-          description: template.description || '',
-          duration: template.duration,
-          wallet_id: template.wallet_id,
-          scenario_template_id: template.id,
-          options: template.option_template || []
-        };
-      }
-    }
-    
-    setScenarios(newScenarios);
-  };
-  
-  const addScenarioOption = (scenarioIndex) => {
-    const newScenarios = [...scenarios];
-    const options = [...newScenarios[scenarioIndex].options] || [];
-    options.push({
-      text: `Option ${String.fromCharCode(65 + options.length)}`,
-      value: String.fromCharCode(65 + options.length)
-    });
-    newScenarios[scenarioIndex].options = options;
-    setScenarios(newScenarios);
-  };
-  
-  const removeScenarioOption = (scenarioIndex, optionIndex) => {
-    const newScenarios = [...scenarios];
-    const options = [...newScenarios[scenarioIndex].options];
-    
-    if (options.length > 1) {
-      newScenarios[scenarioIndex].options = options.filter((_, i) => i !== optionIndex);
-      setScenarios(newScenarios);
-    }
-  };
-  
-  const addScenario = () => {
-    setScenarios([
-      ...scenarios,
-      {
-        experiment_id: id,
-        title: '',
-        description: '',
-        duration: 300,
-        wallet_id: null,
-        scenario_template_id: null,
-        options: [
-          { text: 'Option A', value: 'A' },
-          { text: 'Option B', value: 'B' }
-        ],
-        order_index: scenarios.length
-      }
-    ]);
-  };
-  
-  const removeScenario = (index) => {
-    if (scenarios.length > 1) {
-      setScenarios(scenarios.filter((_, i) => i !== index));
-    } else {
-      setError('You must have at least one scenario');
-    }
-  };
-  
-  // Handler for break screens
-  const handleBreakScreenChange = (index, field, value) => {
-    const newBreakScreens = [...breakScreens];
-    newBreakScreens[index] = {
-      ...newBreakScreens[index],
-      [field]: value
-    };
-    setBreakScreens(newBreakScreens);
-  };
-  
-  const addBreakScreen = () => {
-    setBreakScreens([
-      ...breakScreens,
-      { 
-        experiment_id: id,
-        title: `Break ${breakScreens.length + 1}`, 
-        content: 'Take a short break before continuing.',
-        order_index: breakScreens.length
-      }
-    ]);
-  };
-  
-  const removeBreakScreen = (index) => {
-    setBreakScreens(breakScreens.filter((_, i) => i !== index));
-  };
-  
-  // Handler for survey questions
-  const handleSurveyQuestionChange = (index, field, value) => {
-    const newSurveyQuestions = [...surveyQuestions];
-    newSurveyQuestions[index] = {
-      ...newSurveyQuestions[index],
-      [field]: value
-    };
-    setSurveyQuestions(newSurveyQuestions);
-  };
-  
-  const handleSurveyOptionChange = (questionIndex, optionIndex, value) => {
-    const newSurveyQuestions = [...surveyQuestions];
-    const options = [...newSurveyQuestions[questionIndex].options];
-    options[optionIndex] = value;
-    newSurveyQuestions[questionIndex].options = options;
-    setSurveyQuestions(newSurveyQuestions);
-  };
-  
-  const addSurveyOption = (questionIndex) => {
-    const newSurveyQuestions = [...surveyQuestions];
-    const options = [...newSurveyQuestions[questionIndex].options] || [];
-    options.push(`Option ${options.length + 1}`);
-    newSurveyQuestions[questionIndex].options = options;
-    setSurveyQuestions(newSurveyQuestions);
-  };
-  
-  const removeSurveyOption = (questionIndex, optionIndex) => {
-    const newSurveyQuestions = [...surveyQuestions];
-    const options = [...newSurveyQuestions[questionIndex].options];
-    
-    if (options.length > 1) {
-      newSurveyQuestions[questionIndex].options = options.filter((_, i) => i !== optionIndex);
-      setSurveyQuestions(newSurveyQuestions);
-    }
-  };
-  
-  const addSurveyQuestion = () => {
-    setSurveyQuestions([
-      ...surveyQuestions,
-      {
-        experiment_id: id,
-        question: `Question ${surveyQuestions.length + 1}`,
-        type: 'multiple_choice',
-        options: ['Option 1', 'Option 2', 'Option 3'],
-        order_index: surveyQuestions.length
-      }
-    ]);
-  };
-  
-  const removeSurveyQuestion = (index) => {
-    if (surveyQuestions.length > 1) {
-      setSurveyQuestions(surveyQuestions.filter((_, i) => i !== index));
-    } else {
-      setError('You must have at least one survey question');
-    }
   };
   
   const handleSubmit = async (e) => {
@@ -356,110 +69,21 @@ export default function EditExperiment() {
     
     try {
       // Validate form
-      if (!experiment.title) {
+      if (!experimentData.title) {
         throw new Error('Experiment title is required');
-      }
-      
-      if (scenarios.length === 0) {
-        throw new Error('At least one scenario is required');
       }
       
       // Update experiment in database
       const { error: experimentError } = await supabase
         .from('experiments')
         .update({
-          title: experiment.title,
-          description: experiment.description,
-          status: experiment.status,
-          scenario_count: scenarios.length
+          title: experimentData.title,
+          description: experimentData.description,
+          status: experimentData.status,
         })
         .eq('id', id);
       
       if (experimentError) throw experimentError;
-      
-      // Delete existing components and recreate them
-      // (this is simpler than determining which ones to update vs. create vs. delete)
-      
-      // Delete intro screens
-      await supabase.from('experiment_intro_screens').delete().eq('experiment_id', id);
-      
-      // Insert updated intro screens
-      if (introScreens.length > 0) {
-        const { error: introError } = await supabase
-          .from('experiment_intro_screens')
-          .insert(
-            introScreens.map((screen, index) => ({
-              experiment_id: id,
-              title: screen.title,
-              content: screen.content,
-              order_index: index
-            }))
-          );
-        
-        if (introError) throw introError;
-      }
-      
-      // Delete scenarios
-      await supabase.from('experiment_scenarios').delete().eq('experiment_id', id);
-      
-      // Insert updated scenarios
-      if (scenarios.length > 0) {
-        const { error: scenariosError } = await supabase
-          .from('experiment_scenarios')
-          .insert(
-            scenarios.map((scenario, index) => ({
-              experiment_id: id,
-              title: scenario.title,
-              description: scenario.description,
-              duration: scenario.duration,
-              wallet_id: scenario.wallet_id,
-              scenario_template_id: scenario.scenario_template_id,
-              options: scenario.options,
-              order_index: index
-            }))
-          );
-        
-        if (scenariosError) throw scenariosError;
-      }
-      
-      // Delete break screens
-      await supabase.from('experiment_break_screens').delete().eq('experiment_id', id);
-      
-      // Insert updated break screens
-      if (breakScreens.length > 0) {
-        const { error: breaksError } = await supabase
-          .from('experiment_break_screens')
-          .insert(
-            breakScreens.map((screen, index) => ({
-              experiment_id: id,
-              title: screen.title,
-              content: screen.content,
-              order_index: index
-            }))
-          );
-        
-        if (breaksError) throw breaksError;
-      }
-      
-      // Delete survey questions
-      await supabase.from('experiment_survey_questions').delete().eq('experiment_id', id);
-      
-      // Insert updated survey questions
-      if (surveyQuestions.length > 0) {
-        const { error: surveyError } = await supabase
-          .from('experiment_survey_questions')
-          .insert(
-            surveyQuestions.map((question, index) => ({
-              experiment_id: id,
-              question: question.question,
-              type: question.type,
-              options: question.options,
-              order_index: index
-            }))
-          );
-        
-        if (surveyError) throw surveyError;
-      }
       
       // Redirect to experiments list
       router.push('/experiments');
@@ -487,7 +111,7 @@ export default function EditExperiment() {
     <Layout title="Edit Experiment">
       <div className="card">
         <h1>Edit Experiment</h1>
-        <p className="mb-3">Update your behavioral economics experiment settings</p>
+        <p className="mb-3">Update your experiment details</p>
         
         {error && (
           <div style={{ 
@@ -502,354 +126,44 @@ export default function EditExperiment() {
         )}
         
         <form onSubmit={handleSubmit}>
-          {/* Main experiment details */}
-          <div className="card" style={{ marginBottom: 'var(--spacing-md)', borderLeft: '4px solid #607d8b' }}>
-            <h2>Experiment Details</h2>
-            
-            <div className="form-group">
-              <label className="form-label" htmlFor="title">Title</label>
-              <input
-                type="text"
-                id="title"
-                name="title"
-                className="form-control"
-                value={experiment.title || ''}
-                onChange={handleExperimentChange}
-                required
-              />
-            </div>
-            
-            <div className="form-group">
-              <label className="form-label" htmlFor="description">Description</label>
-              <textarea
-                id="description"
-                name="description"
-                className="form-control"
-                value={experiment.description || ''}
-                onChange={handleExperimentChange}
-                rows="3"
-              />
-            </div>
-            
-            <div className="form-group">
-              <label className="form-label" htmlFor="status">Status</label>
-              <select
-                id="status"
-                name="status"
-                className="form-control"
-                value={experiment.status || 'draft'}
-                onChange={handleExperimentChange}
-              >
-                <option value="draft">Draft</option>
-                <option value="active">Active</option>
-                <option value="completed">Completed</option>
-              </select>
-            </div>
+          <div className="form-group">
+            <label className="form-label" htmlFor="title">Title</label>
+            <input
+              type="text"
+              id="title"
+              name="title"
+              className="form-control"
+              value={experimentData.title || ''}
+              onChange={handleChange}
+              required
+            />
           </div>
           
-          {/* Intro Screens */}
-          <div className="card" style={{ marginBottom: 'var(--spacing-md)', borderLeft: '4px solid #8bc34a' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-md)' }}>
-              <h2>Intro Screens</h2>
-              <button 
-                type="button" 
-                className="button success" 
-                onClick={addIntroScreen}
-                style={{ padding: '5px 10px', fontSize: '0.9rem' }}
-              >
-                Add Intro Screen
-              </button>
-            </div>
-            
-            {introScreens.length === 0 ? (
-              <p>No intro screens defined yet. Add one to get started.</p>
-            ) : (
-              introScreens.map((screen, index) => (
-                <div key={index} className="card" style={{ marginBottom: 'var(--spacing-md)', backgroundColor: 'var(--color-light)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 'var(--spacing-sm)' }}>
-                    <h3>Intro Screen {index + 1}</h3>
-                    <button 
-                      type="button" 
-                      onClick={() => removeIntroScreen(index)}
-                      className="button danger"
-                      style={{ padding: '3px 8px', fontSize: '0.8rem' }}
-                      disabled={introScreens.length === 1}
-                    >
-                      Remove
-                    </button>
-                  </div>
-                  
-                  <div className="form-group">
-                    <label className="form-label">Title</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      value={screen.title || ''}
-                      onChange={(e) => handleIntroScreenChange(index, 'title', e.target.value)}
-                      required
-                    />
-                  </div>
-                  
-                  <div className="form-group">
-                    <label className="form-label">Content</label>
-                    <textarea
-                      className="form-control"
-                      value={screen.content || ''}
-                      onChange={(e) => handleIntroScreenChange(index, 'content', e.target.value)}
-                      rows="3"
-                      required
-                    />
-                  </div>
-                </div>
-              ))
-            )}
+          <div className="form-group">
+            <label className="form-label" htmlFor="description">Description</label>
+            <textarea
+              id="description"
+              name="description"
+              className="form-control"
+              value={experimentData.description || ''}
+              onChange={handleChange}
+              rows="3"
+            />
           </div>
           
-          {/* Scenarios */}
-          <div className="card" style={{ marginBottom: 'var(--spacing-md)', borderLeft: '4px solid var(--color-primary)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-md)' }}>
-              <h2>Scenarios</h2>
-              <button 
-                type="button" 
-                className="button success" 
-                onClick={addScenario}
-                style={{ padding: '5px 10px', fontSize: '0.9rem' }}
-              >
-                Add Scenario
-              </button>
-            </div>
-            
-            {scenarios.length === 0 ? (
-              <p>No scenarios defined yet. Add one to get started.</p>
-            ) : (
-              scenarios.map((scenario, scenarioIndex) => (
-                <div key={scenarioIndex} className="card" style={{ 
-                  marginBottom: 'var(--spacing-sm)', 
-                  backgroundColor: scenarioIndex % 2 === 0 ? 'var(--color-light)' : 'white',
-                  padding: '12px',
-                  borderLeft: '3px solid var(--color-primary)'
-                }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                    <h3 style={{ margin: 0, fontSize: '1rem' }}>Scenario {scenarioIndex + 1}</h3>
-                    <button 
-                      type="button" 
-                      onClick={() => removeScenario(scenarioIndex)}
-                      className="button danger"
-                      style={{ padding: '2px 6px', fontSize: '0.75rem' }}
-                      disabled={scenarios.length === 1}
-                    >
-                      Remove
-                    </button>
-                  </div>
-                  
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '8px' }}>
-                      <select
-                      className="form-control"
-                      value={scenario.scenario_template_id || ''}
-                      onChange={(e) => handleScenarioTemplateChange(scenarioIndex, e.target.value)}
-                      style={{ fontWeight: 'bold' }}
-                      required
-                    >
-                      <option value="">-- Select Scenario Template --</option>
-                      {availableScenarios.map(template => (
-                        <option key={template.id} value={template.id}>
-                          {template.title}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  
-                  {scenario.scenario_template_id && (
-                    <div style={{ 
-                      marginTop: '8px',
-                      display: 'grid', 
-                      gridTemplateColumns: '1fr 1fr', 
-                      gap: '8px',
-                      fontSize: '0.8rem',
-                      backgroundColor: 'rgba(0,0,0,0.03)',
-                      padding: '6px',
-                      borderRadius: '4px'
-                    }}>
-                      <div>
-                        <div><strong>Duration:</strong> {scenario.duration || 0} sec</div>
-                        <div><strong>Wallet:</strong> {availableWallets.find(w => w.id === scenario.wallet_id)?.name || 'None'}</div>
-                      </div>
-                      <div>
-                        <div><strong>Options:</strong> {scenario.options?.length || 0}</div>
-                        <div style={{ fontStyle: 'italic', color: 'var(--color-gray-dark)', fontSize: '0.75rem', marginTop: '3px' }}>
-                          {availableScenarios.find(t => t.id === scenario.scenario_template_id)?.description?.substring(0, 60) || ''}
-                          {(availableScenarios.find(t => t.id === scenario.scenario_template_id)?.description?.length || 0) > 60 ? '...' : ''}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ))
-            )}
-          </div>
-          
-          {/* Break Screens */}
-          <div className="card" style={{ marginBottom: 'var(--spacing-md)', borderLeft: '4px solid #ff9800' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-md)' }}>
-              <h2>Break Screens</h2>
-              <button 
-                type="button" 
-                className="button success" 
-                onClick={addBreakScreen}
-                style={{ padding: '5px 10px', fontSize: '0.9rem' }}
-              >
-                Add Break Screen
-              </button>
-            </div>
-            
-            {breakScreens.length === 0 ? (
-              <p>No break screens defined yet. Add one to get started.</p>
-            ) : (
-              breakScreens.map((screen, index) => (
-                <div key={index} className="card" style={{ marginBottom: 'var(--spacing-md)', backgroundColor: 'var(--color-light)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 'var(--spacing-sm)' }}>
-                    <h3>Break Screen {index + 1}</h3>
-                    <button 
-                      type="button" 
-                      onClick={() => removeBreakScreen(index)}
-                      className="button danger"
-                      style={{ padding: '3px 8px', fontSize: '0.8rem' }}
-                    >
-                      Remove
-                    </button>
-                  </div>
-                  
-                  <div className="form-group">
-                    <label className="form-label">Title</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      value={screen.title || ''}
-                      onChange={(e) => handleBreakScreenChange(index, 'title', e.target.value)}
-                      required
-                    />
-                  </div>
-                  
-                  <div className="form-group">
-                    <label className="form-label">Content</label>
-                    <textarea
-                      className="form-control"
-                      value={screen.content || ''}
-                      onChange={(e) => handleBreakScreenChange(index, 'content', e.target.value)}
-                      rows="3"
-                      required
-                    />
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-          
-          {/* Survey Questions */}
-          <div className="card" style={{ marginBottom: 'var(--spacing-md)', borderLeft: '4px solid #2196f3' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-md)' }}>
-              <h2>Survey Questions</h2>
-              <button 
-                type="button" 
-                className="button success" 
-                onClick={addSurveyQuestion}
-                style={{ padding: '5px 10px', fontSize: '0.9rem' }}
-              >
-                Add Question
-              </button>
-            </div>
-            
-            {surveyQuestions.length === 0 ? (
-              <p>No survey questions defined yet. Add one to get started.</p>
-            ) : (
-              surveyQuestions.map((question, questionIndex) => (
-                <div key={questionIndex} className="card" style={{ marginBottom: 'var(--spacing-md)', backgroundColor: 'var(--color-light)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 'var(--spacing-sm)' }}>
-                    <h3>Question {questionIndex + 1}</h3>
-                    <button 
-                      type="button" 
-                      onClick={() => removeSurveyQuestion(questionIndex)}
-                      className="button danger"
-                      style={{ padding: '3px 8px', fontSize: '0.8rem' }}
-                      disabled={surveyQuestions.length === 1}
-                    >
-                      Remove
-                    </button>
-                  </div>
-                  
-                  <div className="form-group">
-                    <label className="form-label">Question</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      value={question.question || ''}
-                      onChange={(e) => handleSurveyQuestionChange(questionIndex, 'question', e.target.value)}
-                      required
-                    />
-                  </div>
-                  
-                  <div className="form-group">
-                    <label className="form-label">Question Type</label>
-                    <select
-                      className="form-control"
-                      value={question.type || 'multiple_choice'}
-                      onChange={(e) => handleSurveyQuestionChange(questionIndex, 'type', e.target.value)}
-                    >
-                      <option value="multiple_choice">Multiple Choice</option>
-                      <option value="text">Text</option>
-                      <option value="number">Number</option>
-                    </select>
-                  </div>
-                  
-                  {question.type === 'multiple_choice' && (
-                    <div className="form-group">
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-sm)' }}>
-                        <label className="form-label" style={{ marginBottom: 0 }}>Options</label>
-                        <button 
-                          type="button" 
-                          className="button success" 
-                          onClick={() => addSurveyOption(questionIndex)}
-                          style={{ padding: '3px 8px', fontSize: '0.8rem' }}
-                        >
-                          Add Option
-                        </button>
-                      </div>
-                      
-                      {question.options && question.options.length > 0 ? (
-                        question.options.map((option, optionIndex) => (
-                          <div key={optionIndex} style={{ 
-                            display: 'flex', 
-                            gap: 'var(--spacing-sm)', 
-                            marginBottom: 'var(--spacing-sm)',
-                            alignItems: 'center'
-                          }}>
-                            <input
-                              type="text"
-                              className="form-control"
-                              value={option || ''}
-                              onChange={(e) => handleSurveyOptionChange(questionIndex, optionIndex, e.target.value)}
-                              style={{ flex: 1 }}
-                              required
-                            />
-                            <button 
-                              type="button" 
-                              onClick={() => removeSurveyOption(questionIndex, optionIndex)}
-                              className="button danger"
-                              style={{ padding: '3px 8px', fontSize: '0.8rem' }}
-                              disabled={question.options.length === 1}
-                            >
-                              Remove
-                            </button>
-                          </div>
-                        ))
-                      ) : (
-                        <p>No options defined yet.</p>
-                      )}
-                    </div>
-                  )}
-                </div>
-              ))
-            )}
+          <div className="form-group">
+            <label className="form-label" htmlFor="status">Status</label>
+            <select
+              id="status"
+              name="status"
+              className="form-control"
+              value={experimentData.status || 'draft'}
+              onChange={handleChange}
+            >
+              <option value="draft">Draft</option>
+              <option value="active">Active</option>
+              <option value="completed">Completed</option>
+            </select>
           </div>
           
           <div style={{ display: 'flex', gap: 'var(--spacing-md)', marginTop: 'var(--spacing-lg)' }}>
