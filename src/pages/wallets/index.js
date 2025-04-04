@@ -194,41 +194,39 @@ export default function Wallets() {
         ) : (
           <div>
             {wallets.map(wallet => (
-              <div key={wallet.id} className="card" style={{ marginBottom: 'var(--spacing-md)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <h2>{wallet.name}</h2>
+              <div key={wallet.id} className="card" style={{ marginBottom: 'var(--spacing-sm)', padding: 'var(--spacing-sm)' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '3fr 1fr', gap: '10px', alignItems: 'center' }}>
                   <div>
-                    <Link href={`/wallets/${wallet.id}`} className="button">
+                    <h3 style={{ margin: 0, fontSize: '1.1rem' }}>{wallet.name}</h3>
+                    
+                    {wallet.description && <p style={{ margin: '3px 0', fontSize: '0.85rem' }}>{wallet.description}</p>}
+                    
+                    <div style={{ display: 'flex', gap: '15px', fontSize: '0.9rem', marginTop: '4px', alignItems: 'center' }}>
+                      <span style={{ fontWeight: 'bold', color: 'var(--color-primary)' }}>
+                        ${wallet.totalValue ? wallet.totalValue.toFixed(2) : '0.00'}
+                      </span>
+                      <span style={{ color: 'var(--color-gray-dark)', fontSize: '0.8rem' }}>
+                        {wallet.assetCount || 0} Assets
+                      </span>
+                      <span style={{ color: 'var(--color-gray-dark)', fontSize: '0.8rem' }}>
+                        Created: {new Date(wallet.created_at).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div style={{ display: 'flex', gap: '4px', justifyContent: 'flex-end' }}>
+                    <Link href={`/wallets/${wallet.id}`} className="button" style={{ padding: '3px 8px', fontSize: '0.8rem' }}>
                       View
                     </Link>
                     <button 
                       className="danger" 
-                      style={{ marginLeft: 'var(--spacing-sm)' }}
                       onClick={() => handleDelete(wallet.id)}
+                      style={{ padding: '3px 8px', fontSize: '0.8rem' }}
                     >
                       Delete
                     </button>
                   </div>
                 </div>
-                {wallet.description && <p className="mt-1">{wallet.description}</p>}
-                
-                <div className="mt-2" style={{ display: 'flex', gap: 'var(--spacing-md)' }}>
-                  <div>
-                    <strong style={{ color: 'var(--color-dark)' }}>Total Value:</strong>
-                    <span style={{ fontSize: '1.2rem', marginLeft: 'var(--spacing-sm)', color: 'var(--color-primary)', fontWeight: 'bold' }}>
-                      ${wallet.totalValue ? wallet.totalValue.toFixed(2) : '0.00'}
-                    </span>
-                  </div>
-                  <div>
-                    <span style={{ color: 'var(--color-gray-dark)' }}>
-                      {wallet.assetCount || 0} Assets
-                    </span>
-                  </div>
-                </div>
-                
-                <p className="mt-2" style={{ color: 'var(--color-gray-dark)', fontSize: '0.9rem' }}>
-                  Created: {new Date(wallet.created_at).toLocaleDateString()}
-                </p>
               </div>
             ))}
           </div>

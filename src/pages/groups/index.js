@@ -97,51 +97,53 @@ export default function Groups() {
         ) : (
           <div>
             {groups.map(group => (
-              <div key={group.id} className="card" style={{ marginBottom: 'var(--spacing-md)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div key={group.id} className="card" style={{ marginBottom: 'var(--spacing-sm)', padding: 'var(--spacing-sm)' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '3fr 1fr', gap: '10px', alignItems: 'center' }}>
                   <div>
-                    <h2>{group.name}</h2>
-                    <p style={{ color: 'var(--color-gray-dark)', marginBottom: 'var(--spacing-sm)' }}>
-                      Created: {new Date(group.created_at).toLocaleDateString()}
-                    </p>
-                    <p>{group.description}</p>
-                    
-                    <div style={{ marginTop: 'var(--spacing-md)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '5px' }}>
+                      <h3 style={{ margin: 0, fontSize: '1.1rem' }}>{group.name}</h3>
                       {getActiveStatusBadge(group.is_active)}
-                      <span style={{ marginLeft: 'var(--spacing-md)' }}>
+                      <span style={{ fontSize: '0.85rem' }}>
                         <strong>Members:</strong> {group.member_count || 0}
+                      </span>
+                    </div>
+                    
+                    <p style={{ margin: '0 0 5px 0', fontSize: '0.85rem' }}>{group.description}</p>
+                    
+                    <div style={{ fontSize: '0.8rem' }}>
+                      <span style={{ color: 'var(--color-gray-dark)' }}>
+                        Created: {new Date(group.created_at).toLocaleDateString()}
                       </span>
                     </div>
                   </div>
                   
                   <div>
-                    <div style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
-                      <Link href={`/groups/${group.id}`} className="button">
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', justifyContent: 'flex-end' }}>
+                      <Link href={`/groups/${group.id}`} className="button" style={{ padding: '3px 8px', fontSize: '0.8rem' }}>
                         View
                       </Link>
-                      <Link href={`/groups/${group.id}/edit`} className="button" style={{ backgroundColor: 'var(--color-warning)' }}>
+                      <Link href={`/groups/${group.id}/edit`} className="button" style={{ padding: '3px 8px', fontSize: '0.8rem', backgroundColor: 'var(--color-warning)' }}>
                         Edit
                       </Link>
                       <button 
                         className="danger" 
                         onClick={() => handleDelete(group.id)}
+                        style={{ padding: '3px 8px', fontSize: '0.8rem' }}
                       >
                         Delete
                       </button>
+                      <Link 
+                        href={`/groups/${group.id}/edit`} 
+                        className="button" 
+                        style={{ 
+                          padding: '3px 8px', 
+                          fontSize: '0.8rem',
+                          backgroundColor: 'var(--color-info)'
+                        }}
+                      >
+                        Members
+                      </Link>
                     </div>
-                    
-                    <Link 
-                      href={`/groups/${group.id}/members`} 
-                      className="button" 
-                      style={{ 
-                        display: 'block', 
-                        marginTop: 'var(--spacing-sm)',
-                        backgroundColor: 'var(--color-info)',
-                        textAlign: 'center'
-                      }}
-                    >
-                      Manage Members
-                    </Link>
                   </div>
                 </div>
               </div>

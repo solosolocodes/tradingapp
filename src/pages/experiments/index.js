@@ -105,65 +105,67 @@ export default function Experiments() {
         ) : (
           <div>
             {experiments.map(experiment => (
-              <div key={experiment.id} className="card" style={{ marginBottom: 'var(--spacing-md)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div key={experiment.id} className="card" style={{ marginBottom: 'var(--spacing-sm)', padding: 'var(--spacing-sm)' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '3fr 1fr', gap: '10px', alignItems: 'center' }}>
                   <div>
-                    <h2>{experiment.title}</h2>
-                    <p style={{ color: 'var(--color-gray-dark)', marginBottom: 'var(--spacing-sm)' }}>
-                      Created: {new Date(experiment.created_at).toLocaleDateString()}
-                    </p>
-                    <p>{experiment.description}</p>
-                    
-                    <div style={{ marginTop: 'var(--spacing-md)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '5px' }}>
+                      <h3 style={{ margin: 0, fontSize: '1.1rem' }}>{experiment.title}</h3>
                       {getStatusBadge(experiment.status)}
-                      <span style={{ marginLeft: 'var(--spacing-md)' }}>
+                    </div>
+                    
+                    <p style={{ margin: '0 0 5px 0', fontSize: '0.85rem' }}>{experiment.description}</p>
+                    
+                    <div style={{ fontSize: '0.8rem', display: 'flex', gap: '15px' }}>
+                      <span style={{ color: 'var(--color-gray-dark)' }}>
+                        Created: {new Date(experiment.created_at).toLocaleDateString()}
+                      </span>
+                      <span>
                         <strong>Scenarios:</strong> {experiment.scenario_count || 0}
                       </span>
-                      <span style={{ marginLeft: 'var(--spacing-md)' }}>
+                      <span>
                         <strong>Participants:</strong> {experiment.participant_count || 0}
                       </span>
                     </div>
                   </div>
                   
                   <div>
-                    <div style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
-                      <Link href={`/experiments/${experiment.id}`} className="button">
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', justifyContent: 'flex-end' }}>
+                      <Link href={`/experiments/${experiment.id}`} className="button" style={{ padding: '3px 8px', fontSize: '0.8rem' }}>
                         View
                       </Link>
-                      <Link href={`/experiments/${experiment.id}/edit`} className="button" style={{ backgroundColor: 'var(--color-warning)' }}>
+                      <Link href={`/experiments/${experiment.id}/edit`} className="button" style={{ padding: '3px 8px', fontSize: '0.8rem', backgroundColor: 'var(--color-warning)' }}>
                         Edit
                       </Link>
                       <button 
                         className="danger" 
                         onClick={() => handleDelete(experiment.id)}
+                        style={{ padding: '3px 8px', fontSize: '0.8rem' }}
                       >
                         Delete
                       </button>
                       <Link 
                         href={`/experiments/${experiment.id}/preview`} 
                         className="button" 
-                        style={{ backgroundColor: 'var(--color-info)' }}
+                        style={{ padding: '3px 8px', fontSize: '0.8rem', backgroundColor: 'var(--color-info)' }}
                         target="_blank"
                         rel="noopener noreferrer"
                       >
                         Preview
                       </Link>
+                      {experiment.status === 'active' && (
+                        <Link 
+                          href={`/experiments/${experiment.id}/results`} 
+                          className="button" 
+                          style={{ 
+                            padding: '3px 8px', 
+                            fontSize: '0.8rem',
+                            backgroundColor: 'var(--color-primary)'
+                          }}
+                        >
+                          Results
+                        </Link>
+                      )}
                     </div>
-                    
-                    {experiment.status === 'active' && (
-                      <Link 
-                        href={`/experiments/${experiment.id}/results`} 
-                        className="button" 
-                        style={{ 
-                          display: 'block', 
-                          marginTop: 'var(--spacing-sm)',
-                          backgroundColor: 'var(--color-info)',
-                          textAlign: 'center'
-                        }}
-                      >
-                        View Results
-                      </Link>
-                    )}
                   </div>
                 </div>
               </div>
