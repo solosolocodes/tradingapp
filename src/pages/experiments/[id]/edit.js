@@ -61,14 +61,14 @@ export default function EditExperiment() {
       setExperiment(experimentData);
       
       // Fetch scenario templates
-      const { data: scenariosData, error: scenariosTemplateError } = await supabase
+      const { data: templateData, error: scenariosTemplateError } = await supabase
         .from('scenario_templates')
         .select('id, title, description, duration, wallet_id, rounds, option_template')
         .eq('is_active', true)
         .order('title');
         
       if (scenariosTemplateError) throw scenariosTemplateError;
-      setAvailableScenarios(scenariosData || []);
+      setAvailableScenarios(templateData || []);
       
       // Fetch intro screens
       const { data: introData, error: introError } = await supabase
