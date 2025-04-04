@@ -426,8 +426,19 @@ export default function EditExperiment() {
           <div>
             <ExperimentSections experimentId={id} compact={true} />
             
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 'var(--spacing-lg)' }}>
-              <Link href="/experiments" className="button">
+            <div style={{ display: 'flex', gap: 'var(--spacing-md)', marginTop: 'var(--spacing-lg)' }}>
+              <button 
+                type="button" 
+                className="button success" 
+                style={{ flex: 1 }}
+                onClick={() => {
+                  setActiveTab('basic');
+                  window.scrollTo(0, 0);
+                }}
+              >
+                Continue to Basic Info
+              </button>
+              <Link href="/experiments" className="button" style={{ flex: 1, textAlign: 'center' }}>
                 Back to Experiments
               </Link>
             </div>

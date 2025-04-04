@@ -902,12 +902,12 @@ export default function ExperimentSections({ experimentId, compact = true }) {
   
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-md)' }}>
-        <h2 style={{ margin: 0 }}>Experiment Sections</h2>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: compact ? 'var(--spacing-sm)' : 'var(--spacing-md)' }}>
+        <h2 style={{ margin: 0, fontSize: compact ? '1.2rem' : '1.5rem' }}>Experiment Flow</h2>
         
         {!addingSectionType && (
-          <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)' }}>
-            <label className="form-label" style={{ margin: 0, whiteSpace: 'nowrap' }}>Add Section:</label>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <label style={{ margin: 0, whiteSpace: 'nowrap', fontSize: '0.85rem' }}>Add:</label>
             <select
               className="form-control"
               value=""
@@ -917,9 +917,13 @@ export default function ExperimentSections({ experimentId, compact = true }) {
                   e.target.value = '';
                 }
               }}
-              style={{ minWidth: '150px' }}
+              style={{ 
+                minWidth: compact ? '120px' : '150px',
+                padding: compact ? '4px 8px' : 'var(--spacing-sm)',
+                fontSize: compact ? '0.85rem' : 'inherit'
+              }}
             >
-              <option value="">Select type...</option>
+              <option value="">+ Add Section</option>
               <option value={SECTION_TYPES.INFO}>Information Page</option>
               <option value={SECTION_TYPES.SCENARIO}>Scenario</option>
               <option value={SECTION_TYPES.SURVEY}>Survey</option>
@@ -946,12 +950,12 @@ export default function ExperimentSections({ experimentId, compact = true }) {
       
       {/* Section List */}
       {sections.length === 0 ? (
-        <div className="card" style={{ textAlign: 'center', padding: 'var(--spacing-md)', backgroundColor: 'var(--color-light)' }}>
-          <p>No sections have been added yet. Use the dropdown above to add sections.</p>
+        <div className="card" style={{ textAlign: 'center', padding: 'var(--spacing-sm)', backgroundColor: 'var(--color-light)' }}>
+          <p style={{ fontSize: '0.9rem' }}>No sections have been added yet. Use the dropdown above to add sections.</p>
         </div>
       ) : (
-        <div className="card" style={{ padding: compact ? 'var(--spacing-sm)' : 'var(--spacing-md)', backgroundColor: 'var(--color-light)' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: compact ? '4px' : 'var(--spacing-sm)' }}>
+        <div className="card" style={{ padding: compact ? '8px' : 'var(--spacing-md)', backgroundColor: 'var(--color-light)', margin: 0 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
             {sections.map((section, index) => {
               const typeStyles = getSectionTypeStyles(section.type);
               
@@ -962,25 +966,26 @@ export default function ExperimentSections({ experimentId, compact = true }) {
                     display: 'flex', 
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    padding: compact ? '6px 10px' : 'var(--spacing-sm)',
+                    padding: compact ? '4px 8px' : 'var(--spacing-sm)',
                     backgroundColor: 'white',
                     borderRadius: 'var(--border-radius)',
                     border: '1px solid var(--color-gray)',
-                    borderLeft: `4px solid ${typeStyles.color}`
+                    borderLeft: `3px solid ${typeStyles.color}`,
+                    marginBottom: compact ? '2px' : '4px'
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: compact ? '6px' : 'var(--spacing-sm)', overflow: 'hidden' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', overflow: 'hidden' }}>
                     <span style={{ 
                       display: 'inline-flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      width: '24px',
-                      height: '24px',
+                      width: '18px',
+                      height: '18px',
                       borderRadius: '50%',
                       backgroundColor: typeStyles.color,
                       color: 'white',
                       fontWeight: 'bold',
-                      fontSize: '12px',
+                      fontSize: '10px',
                       flexShrink: 0
                     }}>
                       {index + 1}
@@ -988,31 +993,38 @@ export default function ExperimentSections({ experimentId, compact = true }) {
                     
                     <span style={{ 
                       backgroundColor: 'var(--color-light)',
-                      padding: '2px 6px',
-                      borderRadius: '10px',
-                      fontSize: '0.75rem',
+                      padding: '1px 4px',
+                      borderRadius: '8px',
+                      fontSize: '0.7rem',
                       whiteSpace: 'nowrap'
                     }}>
-                      {typeStyles.icon} {typeStyles.text}
+                      {typeStyles.icon}
                     </span>
                     
                     <span style={{ 
-                      fontWeight: 'bold',
+                      fontWeight: '500',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap'
+                      whiteSpace: 'nowrap',
+                      fontSize: '0.85rem'
                     }}>
                       {section.title}
                     </span>
                   </div>
                   
-                  <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', gap: '2px', alignItems: 'center' }}>
                     <button
                       type="button"
                       className="button"
                       onClick={() => handleMoveSection(section.id, 'up')}
                       disabled={index === 0}
-                      style={{ padding: '2px 4px', fontSize: '0.7rem' }}
+                      style={{ 
+                        padding: '0px 3px', 
+                        fontSize: '0.7rem',
+                        minWidth: '18px',
+                        height: '18px',
+                        lineHeight: '1'
+                      }}
                       title="Move Up"
                     >
                       ↑
@@ -1022,7 +1034,13 @@ export default function ExperimentSections({ experimentId, compact = true }) {
                       className="button"
                       onClick={() => handleMoveSection(section.id, 'down')}
                       disabled={index === sections.length - 1}
-                      style={{ padding: '2px 4px', fontSize: '0.7rem' }}
+                      style={{ 
+                        padding: '0px 3px', 
+                        fontSize: '0.7rem',
+                        minWidth: '18px',
+                        height: '18px',
+                        lineHeight: '1'
+                      }}
                       title="Move Down"
                     >
                       ↓
@@ -1032,9 +1050,12 @@ export default function ExperimentSections({ experimentId, compact = true }) {
                       className="button"
                       onClick={() => setEditingSectionId(section.id)}
                       style={{ 
-                        padding: '2px 4px', 
+                        padding: '0px 3px', 
                         fontSize: '0.7rem',
-                        backgroundColor: 'var(--color-warning)'
+                        backgroundColor: 'var(--color-warning)',
+                        minWidth: '18px',
+                        height: '18px',
+                        lineHeight: '1'
                       }}
                       title="Edit Section"
                     >
@@ -1044,7 +1065,13 @@ export default function ExperimentSections({ experimentId, compact = true }) {
                       type="button"
                       className="danger"
                       onClick={() => handleDeleteSection(section.id, section.type, section.originalId)}
-                      style={{ padding: '2px 4px', fontSize: '0.7rem' }}
+                      style={{ 
+                        padding: '0px 3px', 
+                        fontSize: '0.7rem',
+                        minWidth: '18px',
+                        height: '18px',
+                        lineHeight: '1'
+                      }}
                       title="Delete Section"
                     >
                       ×
