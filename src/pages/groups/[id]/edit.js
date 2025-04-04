@@ -1,12 +1,15 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import Layout from '../../components/Layout';
+import Layout from '../../../components/Layout';
 import Link from 'next/link';
-import supabase from '../../lib/supabase';
+import supabase from '../../../lib/supabase';
 
-export default function CreateGroup() {
+export default function EditGroup() {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
+  const { id } = router.query;
+  
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   
   const [formData, setFormData] = useState({
@@ -15,9 +18,60 @@ export default function CreateGroup() {
     is_active: true
   });
   
-  const [participants, setParticipants] = useState([
-    { name: '', email: '', unique_id: '', isNew: true }
-  ]);
+  const [participants, setParticipants] = useState([]);
+  
+  useEffect(() => {
+    if (id) {
+      fetchGroupData();
+    }
+  }, [id]);
+  
+  const fetchGroupData = async () => {
+    try {
+      setLoading(true);
+      
+      // Fetch group details
+      const { data: groupData, error: groupError } = await supabase
+        .from('participant_groups')
+        .select('*')
+        .eq('id', id)
+        .single();
+      
+      if (groupError) throw groupError;
+      
+      if (!groupData) {
+        router.push('/groups');
+        return;
+      }
+      
+      setFormData({
+        name: groupData.name,
+        description: groupData.description || '',
+        is_active: groupData.is_active
+      });
+      
+      // Fetch participants
+      const { data: participantsData, error: participantsError } = await supabase
+        .from('participants')
+        .select('*')
+        .eq('group_id', id)
+        .order('created_at');
+      
+      if (participantsError) throw participantsError;
+      
+      if (participantsData && participantsData.length > 0) {
+        setParticipants(participantsData);
+      } else {
+        // Add an empty row if there are no participants
+        setParticipants([{ name: '', email: '', unique_id: '', isNew: true }]);
+      }
+    } catch (error) {
+      console.error('Error fetching group data:', error);
+      setError('Error loading group data. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
   
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -39,18 +93,41 @@ export default function CreateGroup() {
   const addParticipant = () => {
     setParticipants([
       ...participants,
-      { name: '', email: '', unique_id: '', isNew: true }
+      { name: '', email: '', unique_id: '', group_id: id, isNew: true }
     ]);
   };
   
-  const removeParticipant = (index) => {
+  const removeParticipant = async (index) => {
+    const participant = participants[index];
+    
+    // If it's an existing participant (has an ID), delete from database
+    if (participant.id && !participant.isNew) {
+      try {
+        const { error } = await supabase
+          .from('participants')
+          .delete()
+          .eq('id', participant.id);
+          
+        if (error) {
+          console.error('Error deleting participant:', error);
+          setError(`Error deleting participant: ${error.message}`);
+          return;
+        }
+      } catch (error) {
+        console.error('Error deleting participant:', error);
+        setError('Unexpected error deleting participant');
+        return;
+      }
+    }
+    
+    // Remove from state
     const updatedParticipants = participants.filter((_, i) => i !== index);
     setParticipants(updatedParticipants);
   };
   
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
+    setSaving(true);
     setError(null);
     
     try {
@@ -71,56 +148,95 @@ export default function CreateGroup() {
         }
       });
       
-      // Create group in database
-      const { data: groupData, error: groupError } = await supabase
+      // Update group in database
+      const { error: groupError } = await supabase
         .from('participant_groups')
-        .insert([
-          {
-            name: formData.name,
-            description: formData.description,
-            is_active: formData.is_active,
-            member_count: validParticipants.length
-          }
-        ])
-        .select();
+        .update({
+          name: formData.name,
+          description: formData.description,
+          is_active: formData.is_active,
+          updated_at: new Date(),
+          member_count: validParticipants.length
+        })
+        .eq('id', id);
       
       if (groupError) throw groupError;
       
-      const groupId = groupData[0].id;
+      // Handle participants - separate into new and existing
+      const newParticipants = validParticipants
+        .filter(p => p.isNew || !p.id)
+        .map(p => ({
+          group_id: id,
+          name: p.name,
+          email: p.email,
+          unique_id: p.unique_id,
+          is_active: true
+        }));
       
-      // Add participants if there are any valid ones
-      if (validParticipants.length > 0) {
-        const { error: participantsError } = await supabase
+      const existingParticipants = validParticipants
+        .filter(p => !p.isNew && p.id)
+        .map(p => ({
+          id: p.id,
+          group_id: id,
+          name: p.name,
+          email: p.email,
+          unique_id: p.unique_id,
+          is_active: true,
+          updated_at: new Date()
+        }));
+      
+      // Insert new participants
+      if (newParticipants.length > 0) {
+        const { error: newParticipantsError } = await supabase
           .from('participants')
-          .insert(
-            validParticipants.map(p => ({
-              group_id: groupId,
-              name: p.name,
-              email: p.email,
-              unique_id: p.unique_id,
-              is_active: true
-            }))
-          );
+          .insert(newParticipants);
         
-        if (participantsError) throw participantsError;
+        if (newParticipantsError) throw newParticipantsError;
+      }
+      
+      // Update existing participants
+      for (const participant of existingParticipants) {
+        const { error: updateParticipantError } = await supabase
+          .from('participants')
+          .update({
+            name: participant.name,
+            email: participant.email,
+            unique_id: participant.unique_id,
+            is_active: participant.is_active,
+            updated_at: participant.updated_at
+          })
+          .eq('id', participant.id);
+        
+        if (updateParticipantError) throw updateParticipantError;
       }
       
       // Redirect to group list
       router.push('/groups');
       
     } catch (error) {
-      console.error('Error creating group:', error);
+      console.error('Error updating group:', error);
       setError(error.message);
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
   
+  if (loading) {
+    return (
+      <Layout title="Edit Participant Group">
+        <div className="card">
+          <h1>Edit Participant Group</h1>
+          <p>Loading group data...</p>
+        </div>
+      </Layout>
+    );
+  }
+  
   return (
-    <Layout title="Create Participant Group">
+    <Layout title="Edit Participant Group">
       <div className="card">
-        <h1>Create New Participant Group</h1>
-        <p className="mb-3">Create a group of participants for behavioral economics experiments</p>
+        <h1>Edit Participant Group</h1>
+        <p className="mb-3">Update participant group information and members</p>
         
         {error && (
           <div style={{ 
@@ -183,7 +299,7 @@ export default function CreateGroup() {
           {/* Participants section */}
           <div style={{ marginTop: 'var(--spacing-md)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-sm)' }}>
-              <h3 style={{ margin: 0, fontSize: '1.1rem' }}>Participants</h3>
+              <h3 style={{ margin: 0, fontSize: '1.1rem' }}>Participants ({participants.length})</h3>
               <button 
                 type="button" 
                 className="button success" 
@@ -198,7 +314,9 @@ export default function CreateGroup() {
               border: '1px solid var(--color-gray)', 
               borderRadius: 'var(--border-radius)',
               padding: '10px',
-              marginBottom: 'var(--spacing-md)'
+              marginBottom: 'var(--spacing-md)',
+              maxHeight: '300px',
+              overflowY: 'auto'
             }}>
               {/* Header row */}
               <div style={{ 
@@ -207,7 +325,11 @@ export default function CreateGroup() {
                 gap: '8px',
                 marginBottom: '5px',
                 fontWeight: 'bold',
-                fontSize: '0.9rem'
+                fontSize: '0.9rem',
+                position: 'sticky',
+                top: 0,
+                backgroundColor: 'white',
+                padding: '5px 0'
               }}>
                 <div>Name</div>
                 <div>Email</div>
@@ -225,7 +347,7 @@ export default function CreateGroup() {
                 }}>
                   <input
                     type="text"
-                    value={participant.name}
+                    value={participant.name || ''}
                     onChange={(e) => handleParticipantChange(index, 'name', e.target.value)}
                     placeholder="Name"
                     className="form-control"
@@ -234,7 +356,7 @@ export default function CreateGroup() {
                   
                   <input
                     type="email"
-                    value={participant.email}
+                    value={participant.email || ''}
                     onChange={(e) => handleParticipantChange(index, 'email', e.target.value)}
                     placeholder="Email"
                     className="form-control"
@@ -243,7 +365,7 @@ export default function CreateGroup() {
                   
                   <input
                     type="text"
-                    value={participant.unique_id}
+                    value={participant.unique_id || ''}
                     onChange={(e) => handleParticipantChange(index, 'unique_id', e.target.value)}
                     placeholder="ID"
                     className="form-control"
@@ -268,9 +390,9 @@ export default function CreateGroup() {
               type="submit" 
               className="button success" 
               style={{ flex: 1 }}
-              disabled={loading}
+              disabled={saving}
             >
-              {loading ? 'Creating...' : 'Create Group'}
+              {saving ? 'Saving...' : 'Save Changes'}
             </button>
             <Link href="/groups" className="button" style={{ flex: 1, textAlign: 'center' }}>
               Cancel
