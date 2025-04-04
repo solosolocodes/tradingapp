@@ -163,6 +163,188 @@ export default function ExperimentSections({ experimentId, compact = true }) {
     }
   };
   
+  // Create default sections for a new experiment
+  const createDefaultSections = async (experimentId) => {
+    try {
+      const defaultSections = [
+        // Welcome screen
+        {
+          type: SECTION_TYPES.INFO,
+          title: 'Welcome to the Experiment',
+          content: 'Thank you for participating in this experiment. Your responses will help us better understand economic decision-making.',
+          order_index: 0
+        },
+        // Instructions screen
+        {
+          type: SECTION_TYPES.INFO,
+          title: 'Instructions',
+          content: 'In this experiment, you will be presented with several scenarios. In each scenario, you will need to make financial decisions based on the information provided. Take your time to consider each option carefully.',
+          order_index: 1
+        },
+        // First scenario
+        {
+          type: SECTION_TYPES.SCENARIO,
+          order_index: 2
+        },
+        // Info screen before second scenario
+        {
+          type: SECTION_TYPES.INFO,
+          title: 'Next Scenario',
+          content: 'You have completed the first scenario. Let\'s move on to the next one. Remember, each scenario is independent of the others.',
+          order_index: 3
+        },
+        // Second scenario
+        {
+          type: SECTION_TYPES.SCENARIO,
+          order_index: 4
+        },
+        // Info screen before third scenario
+        {
+          type: SECTION_TYPES.INFO,
+          title: 'Final Scenario',
+          content: 'You\'re doing great! This is the final scenario. After this, you will complete a short survey.',
+          order_index: 5
+        },
+        // Third scenario
+        {
+          type: SECTION_TYPES.SCENARIO,
+          order_index: 6
+        },
+        // Survey
+        {
+          type: SECTION_TYPES.SURVEY,
+          is_demographic: true,
+          order_index: 7
+        }
+      ];
+      
+      // Get default scenario template for use in scenarios
+      const { data: scenarioTemplates, error: scenarioError } = await supabase
+        .from('scenario_templates')
+        .select('id, title, description, duration, options')
+        .order('created_at', { ascending: false })
+        .limit(3);
+        
+      if (scenarioError) throw scenarioError;
+      
+      // If no scenario templates exist, create a dummy one
+      let dummyScenarioId = null;
+      if (!scenarioTemplates || scenarioTemplates.length === 0) {
+        const { data: newTemplate, error: createError } = await supabase
+          .from('scenario_templates')
+          .insert({
+            title: 'Investment Decision',
+            description: 'Choose how to allocate your investment funds.',
+            duration: 60,
+            options: [
+              { value: 'option_a', text: 'Invest in Stock A' },
+              { value: 'option_b', text: 'Invest in Stock B' },
+              { value: 'option_c', text: 'Keep funds in cash' }
+            ]
+          })
+          .select()
+          .single();
+          
+        if (createError) throw createError;
+        dummyScenarioId = newTemplate.id;
+      }
+      
+      // Insert each default section
+      for (const section of defaultSections) {
+        if (section.type === SECTION_TYPES.INFO) {
+          await supabase
+            .from('experiment_intro_screens')
+            .insert({
+              experiment_id: experimentId,
+              title: section.title,
+              content: section.content,
+              order_index: section.order_index
+            });
+        } 
+        else if (section.type === SECTION_TYPES.SCENARIO) {
+          // Use available templates or the dummy one
+          const templateToUse = scenarioTemplates && scenarioTemplates.length > 0
+            ? scenarioTemplates[Math.floor(Math.random() * scenarioTemplates.length)]
+            : {
+                id: dummyScenarioId,
+                title: 'Investment Decision',
+                description: 'Choose how to allocate your investment funds.',
+                duration: 60,
+                options: [
+                  { value: 'option_a', text: 'Invest in Stock A' },
+                  { value: 'option_b', text: 'Invest in Stock B' },
+                  { value: 'option_c', text: 'Keep funds in cash' }
+                ]
+              };
+              
+          await supabase
+            .from('experiment_scenarios')
+            .insert({
+              experiment_id: experimentId,
+              title: templateToUse.title,
+              description: templateToUse.description,
+              duration: templateToUse.duration,
+              options: templateToUse.options,
+              order_index: section.order_index
+            });
+        }
+        else if (section.type === SECTION_TYPES.SURVEY && section.is_demographic) {
+          const demographicQuestions = [
+            {
+              experiment_id: experimentId,
+              question: 'What is your age?',
+              type: 'number',
+              options: null,
+              order_index: section.order_index,
+              is_demographic: true
+            },
+            {
+              experiment_id: experimentId,
+              question: 'What is your gender?',
+              type: 'multiple_choice',
+              options: ['Male', 'Female', 'Non-binary', 'Prefer not to say'],
+              order_index: section.order_index,
+              is_demographic: true
+            },
+            {
+              experiment_id: experimentId,
+              question: 'What is your highest level of education?',
+              type: 'multiple_choice',
+              options: ['High School', 'Bachelor\'s Degree', 'Master\'s Degree', 'Doctorate', 'Other'],
+              order_index: section.order_index,
+              is_demographic: true
+            },
+            {
+              experiment_id: experimentId,
+              question: 'How experienced are you with investing?',
+              type: 'multiple_choice',
+              options: ['No experience', 'Beginner', 'Intermediate', 'Advanced', 'Expert'],
+              order_index: section.order_index,
+              is_demographic: true
+            },
+            {
+              experiment_id: experimentId,
+              question: 'How experienced are you with cryptocurrency?',
+              type: 'multiple_choice',
+              options: ['No experience', 'Beginner', 'Intermediate', 'Advanced', 'Expert'],
+              order_index: section.order_index,
+              is_demographic: true
+            }
+          ];
+          
+          await supabase
+            .from('experiment_survey_questions')
+            .insert(demographicQuestions);
+        }
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Error creating default sections:', error);
+      return false;
+    }
+  };
+
   // Create new section
   const handleCreateSection = async (type) => {
     try {

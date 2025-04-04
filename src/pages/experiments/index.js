@@ -126,9 +126,14 @@ export default function Experiments() {
       <div className="card">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-lg)' }}>
           <h1>Behavioral Economics Experiments</h1>
-          <Link href="/experiments/create" className="button" style={{ backgroundColor: 'var(--color-success)' }}>
-            Create Experiment
-          </Link>
+          <div style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
+            <Link href="/experiments/reset-demo" className="button" style={{ backgroundColor: 'var(--color-info)' }}>
+              Reset Demo Data
+            </Link>
+            <Link href="/experiments/create" className="button" style={{ backgroundColor: 'var(--color-success)' }}>
+              Create Experiment
+            </Link>
+          </div>
         </div>
         
         <p style={{ marginBottom: 'var(--spacing-lg)' }}>
