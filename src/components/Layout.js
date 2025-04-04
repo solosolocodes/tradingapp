@@ -18,6 +18,7 @@ export default function Layout({ children, title = 'TradingApp' }) {
             <ul>
               <li><Link href="/">Home</Link></li>
               <li><Link href="/experiments">Experiments</Link></li>
+              <li><Link href="/scenarios">Scenarios</Link></li>
               <li><Link href="/groups">Groups</Link></li>
               <li><Link href="/wallets">Wallets</Link></li>
               <li><Link href="/transactions">Reporting</Link></li>

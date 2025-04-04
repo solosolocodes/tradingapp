@@ -12,6 +12,8 @@ export default function WalletDetail() {
   const [assets, setAssets] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [assetSortBy, setAssetSortBy] = useState('symbol'); // 'symbol', 'name', or 'amount'
+  const [assetFilter, setAssetFilter] = useState('');
   
   // Transaction form state
   const [showForm, setShowForm] = useState(false);
@@ -465,6 +467,27 @@ export default function WalletDetail() {
       return total + (asset.amount * asset.price_spot);
     }, 0).toFixed(2);
   }
+  
+  // Function to get filtered and sorted assets based on current preferences
+  function getFilteredAndSortedAssets() {
+    return [...assets]
+      .filter(asset => {
+        if (!assetFilter) return true;
+        const searchTerm = assetFilter.toLowerCase();
+        return asset.asset_symbol.toLowerCase().includes(searchTerm) || 
+               asset.name.toLowerCase().includes(searchTerm);
+      })
+      .sort((a, b) => {
+        if (assetSortBy === 'symbol') {
+          return a.asset_symbol.localeCompare(b.asset_symbol);
+        } else if (assetSortBy === 'name') {
+          return a.name.localeCompare(b.name);
+        } else if (assetSortBy === 'amount') {
+          return b.amount - a.amount; // Descending order for amount
+        }
+        return 0;
+      });
+  }
 
   if (!id) {
     return <Layout><p>Loading...</p></Layout>;
@@ -488,6 +511,127 @@ export default function WalletDetail() {
             <p className="mb-3">
               <strong>Total Value:</strong> ${calculateWalletTotal()}
             </p>
+            
+            {/* Asset List Card */}
+            {assets.length > 0 && (
+              <div className="card" style={{ 
+                marginTop: 'var(--spacing-md)', 
+                marginBottom: 'var(--spacing-md)',
+                backgroundColor: 'var(--color-light)',
+                padding: 'var(--spacing-md)',
+                borderRadius: 'var(--border-radius)'
+              }}>
+                <div style={{ marginBottom: 'var(--spacing-md)' }}>
+                  <h3 style={{ margin: 0, marginBottom: 'var(--spacing-sm)' }}>Assets in this Wallet</h3>
+                  
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ position: 'relative', flex: '1', maxWidth: '300px' }}>
+                      <input
+                        type="text"
+                        placeholder="Search assets..."
+                        value={assetFilter}
+                        onChange={(e) => setAssetFilter(e.target.value)}
+                        style={{
+                          width: '100%',
+                          padding: '6px 10px',
+                          border: '1px solid var(--color-border)',
+                          borderRadius: 'var(--border-radius)',
+                          fontSize: '0.9em'
+                        }}
+                      />
+                      {assetFilter && (
+                        <button
+                          onClick={() => setAssetFilter('')}
+                          style={{
+                            position: 'absolute',
+                            right: '10px',
+                            top: '50%',
+                            transform: 'translateY(-50%)',
+                            border: 'none',
+                            background: 'none',
+                            cursor: 'pointer',
+                            fontSize: '0.9em',
+                            color: 'var(--color-gray-dark)'
+                          }}
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
+                    <div>
+                      <label style={{ marginRight: '8px', fontSize: '0.9em' }}>Sort by:</label>
+                      <select 
+                        value={assetSortBy} 
+                        onChange={(e) => setAssetSortBy(e.target.value)}
+                        style={{ padding: '3px 6px', fontSize: '0.9em' }}
+                      >
+                        <option value="symbol">Symbol</option>
+                        <option value="name">Name</option>
+                        <option value="amount">Amount</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+                {getFilteredAndSortedAssets().length === 0 && assetFilter ? (
+                  <div style={{ 
+                    padding: '15px', 
+                    backgroundColor: 'white', 
+                    borderRadius: 'var(--border-radius)',
+                    textAlign: 'center'
+                  }}>
+                    No assets matching "{assetFilter}" found.
+                  </div>
+                ) : (
+                  <div style={{ 
+                    display: 'flex', 
+                    flexWrap: 'wrap', 
+                    gap: '10px',
+                    marginBottom: 'var(--spacing-xs)'
+                  }}>
+                    {getFilteredAndSortedAssets().map(asset => (
+                    <div key={asset.id} style={{ 
+                      padding: '8px 12px',
+                      backgroundColor: asset.is_reference ? 'var(--color-success-light)' : 'white',
+                      border: '1px solid var(--color-border)',
+                      borderRadius: 'var(--border-radius)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                      minWidth: '200px',
+                      justifyContent: 'space-between'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center' }}>
+                        <div style={{ 
+                          fontWeight: 'bold', 
+                          fontSize: '1.1em', 
+                          marginRight: '8px',
+                          color: 'var(--color-primary)'
+                        }}>
+                          {asset.asset_symbol}
+                        </div>
+                        <div style={{ 
+                          fontSize: '0.9em',
+                          color: 'var(--color-text)'
+                        }}>
+                          {asset.name}
+                        </div>
+                      </div>
+                      <div style={{
+                        marginLeft: '15px',
+                        fontSize: '0.85em',
+                        backgroundColor: asset.amount > 0 ? 'var(--color-info-light)' : 'var(--color-gray-light)',
+                        padding: '2px 6px',
+                        borderRadius: '10px',
+                        fontWeight: 'bold'
+                      }}>
+                        {asset.amount > 0 ? asset.amount.toFixed(4) : '0'}
+                      </div>
+                    </div>
+                  ))}
+                  </div>
+                )}
+              </div>
+            )}
           </>
         ) : (
           <p>Loading wallet details...</p>

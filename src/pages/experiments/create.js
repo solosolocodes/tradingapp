@@ -21,7 +21,7 @@ export default function CreateExperiment() {
   const [availableGroups, setAvailableGroups] = useState([]);
   const [availableWallets, setAvailableWallets] = useState([]);
   
-  // Fetch available groups and wallets
+  // Fetch available groups, wallets and scenario templates
   useEffect(() => {
     async function fetchData() {
       try {
@@ -43,9 +43,19 @@ export default function CreateExperiment() {
           
         if (walletsError) throw walletsError;
         setAvailableWallets(walletsData || []);
+        
+        // Fetch scenario templates
+        const { data: scenariosData, error: scenariosError } = await supabase
+          .from('scenario_templates')
+          .select('id, title, description, duration, wallet_id, rounds, option_template')
+          .eq('is_active', true)
+          .order('title');
+          
+        if (scenariosError) throw scenariosError;
+        setAvailableScenarios(scenariosData || []);
       } catch (error) {
-        console.error('Error fetching groups or wallets:', error);
-        setError('Error loading groups and wallets. Please try again.');
+        console.error('Error fetching groups, wallets, or scenarios:', error);
+        setError('Error loading data. Please try again.');
       }
     }
     
@@ -64,12 +74,16 @@ export default function CreateExperiment() {
       description: 'First scenario description',
       duration: 300, // duration in seconds
       wallet_id: null,
+      scenario_template_id: null,
       options: [
         { text: 'Option A', value: 'A' },
         { text: 'Option B', value: 'B' }
       ]
     }
   ]);
+  
+  // Available scenario templates
+  const [availableScenarios, setAvailableScenarios] = useState([]);
   
   // Break screens
   const [breakScreens, setBreakScreens] = useState([
@@ -138,6 +152,37 @@ export default function CreateExperiment() {
       ...newScenarios[index],
       wallet_id: wallet_id === '' ? null : wallet_id
     };
+    setScenarios(newScenarios);
+  };
+  
+  // Handle selecting a scenario template
+  const handleScenarioTemplateChange = (index, templateId) => {
+    const newScenarios = [...scenarios];
+    
+    if (templateId === '') {
+      // If no template selected, just clear the template ID
+      newScenarios[index] = {
+        ...newScenarios[index],
+        scenario_template_id: null
+      };
+    } else {
+      // Find the selected template
+      const template = availableScenarios.find(s => s.id === templateId);
+      
+      if (template) {
+        // Update scenario with template data
+        newScenarios[index] = {
+          ...newScenarios[index],
+          title: template.title,
+          description: template.description || '',
+          duration: template.duration,
+          wallet_id: template.wallet_id,
+          scenario_template_id: template.id,
+          options: template.option_template || []
+        };
+      }
+    }
+    
     setScenarios(newScenarios);
   };
   
@@ -350,7 +395,8 @@ export default function CreateExperiment() {
             title: scenario.title,
             description: scenario.description,
             duration: scenario.duration,
-            wallet_id: scenario.wallet_id,  // Add wallet_id
+            wallet_id: scenario.wallet_id,
+            scenario_template_id: scenario.scenario_template_id,
             order_index: index,
             options: scenario.options
           }))
@@ -563,6 +609,34 @@ export default function CreateExperiment() {
                 </div>
                 
                 <div className="form-group">
+                  <label className="form-label">Select Scenario Template</label>
+                  <select
+                    className="form-control"
+                    value={scenario.scenario_template_id || ''}
+                    onChange={(e) => handleScenarioTemplateChange(scenarioIndex, e.target.value)}
+                  >
+                    <option value="">-- Create custom scenario --</option>
+                    {availableScenarios.map(template => (
+                      <option key={template.id} value={template.id}>
+                        {template.title}
+                      </option>
+                    ))}
+                  </select>
+                  
+                  {scenario.scenario_template_id && (
+                    <div style={{ 
+                      marginTop: '5px', 
+                      padding: '8px', 
+                      backgroundColor: 'var(--color-light)', 
+                      borderRadius: 'var(--border-radius)',
+                      fontSize: '0.85rem'
+                    }}>
+                      {availableScenarios.find(t => t.id === scenario.scenario_template_id)?.description || ''}
+                    </div>
+                  )}
+                </div>
+                
+                <div className="form-group">
                   <label className="form-label">Title</label>
                   <input
                     type="text"
@@ -570,6 +644,7 @@ export default function CreateExperiment() {
                     value={scenario.title}
                     onChange={(e) => handleScenarioChange(scenarioIndex, 'title', e.target.value)}
                     required
+                    disabled={scenario.scenario_template_id !== null}
                   />
                 </div>
                 
@@ -581,6 +656,7 @@ export default function CreateExperiment() {
                     onChange={(e) => handleScenarioChange(scenarioIndex, 'description', e.target.value)}
                     rows="3"
                     required
+                    disabled={scenario.scenario_template_id !== null}
                   />
                 </div>
                 
@@ -593,74 +669,118 @@ export default function CreateExperiment() {
                     onChange={(e) => handleScenarioChange(scenarioIndex, 'duration', parseInt(e.target.value, 10))}
                     min="1"
                     required
+                    disabled={scenario.scenario_template_id !== null}
                   />
                 </div>
                 
                 <div className="form-group">
-                  <label className="form-label">Assign Wallet (Optional)</label>
-                  <select
-                    className="form-control"
-                    value={scenario.wallet_id || ''}
-                    onChange={(e) => handleScenarioWalletChange(scenarioIndex, e.target.value)}
-                  >
-                    <option value="">-- No wallet assigned --</option>
-                    {availableWallets.map(wallet => (
-                      <option key={wallet.id} value={wallet.id}>
-                        {wallet.name}
-                      </option>
-                    ))}
-                  </select>
+                  <label className="form-label">Wallet</label>
+                  {scenario.scenario_template_id ? (
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={availableWallets.find(w => w.id === scenario.wallet_id)?.name || 'None'}
+                      disabled
+                    />
+                  ) : (
+                    <select
+                      className="form-control"
+                      value={scenario.wallet_id || ''}
+                      onChange={(e) => handleScenarioWalletChange(scenarioIndex, e.target.value)}
+                    >
+                      <option value="">-- No wallet assigned --</option>
+                      {availableWallets.map(wallet => (
+                        <option key={wallet.id} value={wallet.id}>
+                          {wallet.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
                 </div>
                 
                 <div className="form-group">
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-sm)' }}>
                     <label className="form-label" style={{ marginBottom: 0 }}>Options</label>
-                    <button 
-                      type="button" 
-                      className="button success" 
-                      onClick={() => addScenarioOption(scenarioIndex)}
-                      style={{ padding: '3px 8px', fontSize: '0.8rem' }}
-                    >
-                      Add Option
-                    </button>
-                  </div>
-                  
-                  {scenario.options.map((option, optionIndex) => (
-                    <div key={optionIndex} style={{ 
-                      display: 'flex', 
-                      gap: 'var(--spacing-sm)', 
-                      marginBottom: 'var(--spacing-sm)',
-                      alignItems: 'center'
-                    }}>
-                      <input
-                        type="text"
-                        className="form-control"
-                        value={option.text}
-                        onChange={(e) => handleScenarioOptionChange(scenarioIndex, optionIndex, 'text', e.target.value)}
-                        placeholder="Option text"
-                        style={{ flex: 3 }}
-                        required
-                      />
-                      <input
-                        type="text"
-                        className="form-control"
-                        value={option.value}
-                        onChange={(e) => handleScenarioOptionChange(scenarioIndex, optionIndex, 'value', e.target.value)}
-                        placeholder="Value"
-                        style={{ flex: 1 }}
-                        required
-                      />
+                    {!scenario.scenario_template_id && (
                       <button 
                         type="button" 
-                        onClick={() => removeScenarioOption(scenarioIndex, optionIndex)}
-                        className="button danger"
+                        className="button success" 
+                        onClick={() => addScenarioOption(scenarioIndex)}
                         style={{ padding: '3px 8px', fontSize: '0.8rem' }}
-                        disabled={scenario.options.length === 1}
                       >
-                        Remove
+                        Add Option
                       </button>
+                    )}
+                  </div>
+                  
+                  {scenario.scenario_template_id ? (
+                    // Read-only view for template options
+                    <div style={{ 
+                      border: '1px solid var(--color-gray)', 
+                      borderRadius: 'var(--border-radius)',
+                      padding: '10px',
+                      backgroundColor: 'white'
+                    }}>
+                      {scenario.options.length > 0 ? (
+                        <table style={{ width: '100%', margin: 0 }}>
+                          <thead>
+                            <tr>
+                              <th style={{ textAlign: 'left' }}>Option</th>
+                              <th style={{ textAlign: 'left' }}>Value</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {scenario.options.map((option, idx) => (
+                              <tr key={idx}>
+                                <td>{option.text}</td>
+                                <td>{option.value}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      ) : (
+                        <p>No options defined for this template.</p>
+                      )}
                     </div>
-                  ))}
+                  ) : (
+                    // Editable options for custom scenarios
+                    scenario.options.map((option, optionIndex) => (
+                      <div key={optionIndex} style={{ 
+                        display: 'flex', 
+                        gap: 'var(--spacing-sm)', 
+                        marginBottom: 'var(--spacing-sm)',
+                        alignItems: 'center'
+                      }}>
+                        <input
+                          type="text"
+                          className="form-control"
+                          value={option.text}
+                          onChange={(e) => handleScenarioOptionChange(scenarioIndex, optionIndex, 'text', e.target.value)}
+                          placeholder="Option text"
+                          style={{ flex: 3 }}
+                          required
+                        />
+                        <input
+                          type="text"
+                          className="form-control"
+                          value={option.value}
+                          onChange={(e) => handleScenarioOptionChange(scenarioIndex, optionIndex, 'value', e.target.value)}
+                          placeholder="Value"
+                          style={{ flex: 1 }}
+                          required
+                        />
+                        <button 
+                          type="button" 
+                          onClick={() => removeScenarioOption(scenarioIndex, optionIndex)}
+                          className="button danger"
+                          style={{ padding: '3px 8px', fontSize: '0.8rem' }}
+                          disabled={scenario.options.length === 1}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             ))}
