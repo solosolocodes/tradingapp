@@ -15,6 +15,8 @@ export default function ViewExperiment() {
   const [scenarios, setScenarios] = useState([]);
   const [breakScreens, setBreakScreens] = useState([]);
   const [surveyQuestions, setSurveyQuestions] = useState([]);
+  const [participantGroups, setParticipantGroups] = useState([]);
+  const [wallets, setWallets] = useState({});
   
   useEffect(() => {
     if (id) {
@@ -52,7 +54,7 @@ export default function ViewExperiment() {
       if (introError) throw introError;
       setIntroScreens(introData || []);
       
-      // Fetch scenarios
+      // Fetch scenarios with wallet_id
       const { data: scenariosData, error: scenariosError } = await supabase
         .from('experiment_scenarios')
         .select('*')
@@ -61,6 +63,49 @@ export default function ViewExperiment() {
       
       if (scenariosError) throw scenariosError;
       setScenarios(scenariosData || []);
+      
+      // Get wallet IDs to fetch wallet names
+      const walletIds = scenariosData
+        .filter(s => s.wallet_id)
+        .map(s => s.wallet_id);
+      
+      if (walletIds.length > 0) {
+        const { data: walletsData, error: walletsError } = await supabase
+          .from('wallets')
+          .select('id, name')
+          .in('id', walletIds);
+        
+        if (!walletsError && walletsData) {
+          const walletMap = {};
+          walletsData.forEach(wallet => {
+            walletMap[wallet.id] = wallet.name;
+          });
+          setWallets(walletMap);
+        }
+      }
+      
+      // Fetch participant groups
+      const { data: groupsData, error: groupsError } = await supabase
+        .from('experiment_group_assignments')
+        .select(`
+          group_id,
+          is_control_group,
+          participant_groups (
+            id,
+            name,
+            member_count
+          )
+        `)
+        .eq('experiment_id', id)
+        .eq('is_active', true);
+        
+      if (!groupsError && groupsData) {
+        const groups = groupsData.map(assignment => ({
+          ...assignment.participant_groups,
+          is_control_group: assignment.is_control_group
+        }));
+        setParticipantGroups(groups);
+      }
       
       // Fetch break screens
       const { data: breaksData, error: breaksError } = await supabase
@@ -198,6 +243,59 @@ export default function ViewExperiment() {
             </div>
             
             <p>{experiment.description}</p>
+            
+            {/* Participant Groups */}
+            {participantGroups.length > 0 && (
+              <div className="card" style={{ marginTop: 'var(--spacing-md)', padding: 'var(--spacing-md)', backgroundColor: 'var(--color-light)' }}>
+                <h3 style={{ marginTop: 0, marginBottom: 'var(--spacing-sm)', fontSize: '1.1rem' }}>
+                  Participant Groups ({participantGroups.length})
+                </h3>
+                
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+                  {participantGroups.map(group => (
+                    <div 
+                      key={group.id}
+                      style={{ 
+                        padding: '10px', 
+                        borderRadius: 'var(--border-radius)',
+                        border: '1px solid var(--color-gray)',
+                        backgroundColor: 'white',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        minWidth: '150px'
+                      }}
+                    >
+                      <div style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '6px',
+                        marginBottom: '5px'
+                      }}>
+                        <span style={{ fontWeight: 'bold' }}>{group.name}</span>
+                        {group.is_control_group && (
+                          <span 
+                            title="Control Group"
+                            style={{ 
+                              backgroundColor: 'var(--color-warning)',
+                              color: 'white',
+                              padding: '1px 5px',
+                              borderRadius: '10px',
+                              fontSize: '0.7rem',
+                              fontWeight: 'bold'
+                            }}
+                          >
+                            Control
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ fontSize: '0.85rem' }}>
+                        <strong>{group.member_count || 0}</strong> members
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
           
           <div>
@@ -324,7 +422,23 @@ export default function ViewExperiment() {
               scenarios.map((scenario, index) => (
                 <div key={index} className="card" style={{ marginBottom: 'var(--spacing-md)', backgroundColor: 'var(--color-light)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <h3>{scenario.title}</h3>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <h3>{scenario.title}</h3>
+                      {scenario.wallet_id && wallets[scenario.wallet_id] && (
+                        <span
+                          title="Assigned Wallet"
+                          style={{ 
+                            backgroundColor: 'var(--color-primary)',
+                            color: 'white',
+                            padding: '2px 8px',
+                            borderRadius: '10px',
+                            fontSize: '0.8rem'
+                          }}
+                        >
+                          Wallet: {wallets[scenario.wallet_id]}
+                        </span>
+                      )}
+                    </div>
                     <span style={{ 
                       backgroundColor: 'var(--color-gray-dark)', 
                       color: 'white', 

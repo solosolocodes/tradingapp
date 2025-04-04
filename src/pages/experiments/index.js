@@ -16,18 +16,61 @@ export default function Experiments() {
       setLoading(true);
       console.log('Fetching experiments...');
       
-      const { data, error } = await supabase
+      // Fetch experiments
+      const { data: experimentsData, error: experimentsError } = await supabase
         .from('experiments')
         .select('*')
         .order('created_at', { ascending: false });
         
-      if (error) {
-        console.error('Error fetching experiments:', error);
-        alert(`Error loading experiments: ${error.message}`);
-      } else {
-        console.log('Experiments loaded:', data);
-        setExperiments(data || []);
+      if (experimentsError) {
+        console.error('Error fetching experiments:', experimentsError);
+        alert(`Error loading experiments: ${experimentsError.message}`);
+        setLoading(false);
+        return;
       }
+      
+      // For each experiment, fetch associated groups
+      const experimentsWithGroups = await Promise.all(
+        (experimentsData || []).map(async (experiment) => {
+          // Get group assignments for this experiment
+          const { data: assignmentsData, error: assignmentsError } = await supabase
+            .from('experiment_group_assignments')
+            .select(`
+              group_id,
+              is_control_group,
+              participant_groups (
+                id,
+                name,
+                member_count
+              )
+            `)
+            .eq('experiment_id', experiment.id)
+            .eq('is_active', true);
+            
+          if (assignmentsError) {
+            console.error(`Error fetching groups for experiment ${experiment.id}:`, assignmentsError);
+            return {
+              ...experiment,
+              participant_groups: []
+            };
+          }
+          
+          // Extract the group data
+          const groups = (assignmentsData || []).map(assignment => ({
+            ...assignment.participant_groups,
+            is_control_group: assignment.is_control_group
+          }));
+          
+          return {
+            ...experiment,
+            participant_groups: groups
+          };
+        })
+      );
+      
+      console.log('Experiments with groups loaded:', experimentsWithGroups);
+      setExperiments(experimentsWithGroups || []);
+      
     } catch (error) {
       console.error('Error fetching experiments:', error);
       alert(`Unexpected error: ${error.message}`);
@@ -115,7 +158,7 @@ export default function Experiments() {
                     
                     <p style={{ margin: '0 0 5px 0', fontSize: '0.85rem' }}>{experiment.description}</p>
                     
-                    <div style={{ fontSize: '0.8rem', display: 'flex', gap: '15px' }}>
+                    <div style={{ fontSize: '0.8rem', display: 'flex', gap: '15px', marginBottom: '4px' }}>
                       <span style={{ color: 'var(--color-gray-dark)' }}>
                         Created: {new Date(experiment.created_at).toLocaleDateString()}
                       </span>
@@ -126,6 +169,32 @@ export default function Experiments() {
                         <strong>Participants:</strong> {experiment.participant_count || 0}
                       </span>
                     </div>
+                    
+                    {/* Participant Groups */}
+                    {experiment.participant_groups && experiment.participant_groups.length > 0 && (
+                      <div style={{ fontSize: '0.8rem', display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '6px' }}>
+                        <span style={{ fontWeight: 'bold' }}>Groups:</span>
+                        {experiment.participant_groups.map((group, idx) => (
+                          <span 
+                            key={group.id} 
+                            style={{ 
+                              padding: '1px 6px', 
+                              borderRadius: '10px', 
+                              backgroundColor: group.is_control_group ? 'var(--color-warning)' : 'var(--color-primary)',
+                              color: 'white',
+                              fontSize: '0.75rem',
+                              display: 'inline-flex',
+                              alignItems: 'center'
+                            }}
+                          >
+                            {group.name}
+                            {group.is_control_group && (
+                              <span title="Control Group" style={{ marginLeft: '3px', fontSize: '0.7rem' }}>⭐</span>
+                            )}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   
                   <div>
