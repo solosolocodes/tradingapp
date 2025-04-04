@@ -200,6 +200,136 @@ export default function CreateScenario() {
     setAssetPrices(newPrices);
   };
   
+  // Generate CSV template for asset prices
+  const generateCsvTemplate = () => {
+    if (!scenario.wallet_id || walletAssets.length === 0) return;
+    
+    // Create CSV header row: Round, Asset1, Asset2, etc.
+    let csvContent = "Round," + walletAssets.map(asset => `${asset.asset_symbol} (${asset.name})`).join(",") + "\n";
+    
+    // Add CSV format information
+    csvContent += "# CSV Format: First column must be 'Round X' where X is the round number\n";
+    csvContent += "# Asset columns must match the header format: 'SYMBOL (Name)'\n";
+    csvContent += "# Price values must be numeric with optional decimal points (e.g., 45000 or 45000.50)\n\n";
+    
+    // Add rows for each round with current prices
+    for (let round = 1; round <= scenario.rounds; round++) {
+      let row = [`Round ${round}`];
+      
+      walletAssets.forEach(asset => {
+        const price = assetPrices.find(
+          p => p.asset_symbol === asset.asset_symbol && p.round_number === round
+        )?.price || asset.price_spot;
+        row.push(price);
+      });
+      
+      csvContent += row.join(",") + "\n";
+    }
+    
+    // Create the download link
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `scenario_prices_template_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+  
+  // Handle CSV import
+  const handleCsvImport = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const csvData = event.target.result;
+        const lines = csvData.split('\n');
+        
+        // Skip comment lines that start with #
+        const dataLines = lines.filter(line => !line.trim().startsWith('#') && line.trim().length > 0);
+        if (dataLines.length < 2) {
+          alert('CSV file must contain a header row and at least one data row.');
+          return;
+        }
+        
+        // Parse the header to get asset positions
+        const header = dataLines[0].split(',');
+        const assetColumns = {};
+        
+        // Skip the first column (Round) and map assets to their column indices
+        for (let i = 1; i < header.length; i++) {
+          const assetHeader = header[i].trim();
+          // Extract symbol from "SYMBOL (Name)" format
+          const match = assetHeader.match(/^([A-Za-z0-9]+)\s*\(/);
+          if (match && match[1]) {
+            const symbol = match[1];
+            assetColumns[symbol] = i;
+          }
+        }
+        
+        // Create new prices array
+        const newPrices = [];
+        
+        // Process each row (starting from row 1, skipping header)
+        for (let i = 1; i < dataLines.length; i++) {
+          if (!dataLines[i].trim()) continue; // Skip empty lines
+          
+          const values = dataLines[i].split(',');
+          const roundText = values[0].trim();
+          const roundMatch = roundText.match(/Round\s*(\d+)/i);
+          
+          if (!roundMatch || !roundMatch[1]) continue;
+          
+          const round = parseInt(roundMatch[1], 10);
+          if (isNaN(round) || round < 1 || round > scenario.rounds) continue;
+          
+          // Process each asset
+          walletAssets.forEach(asset => {
+            const symbol = asset.asset_symbol;
+            if (typeof assetColumns[symbol] !== 'undefined') {
+              const columnIndex = assetColumns[symbol];
+              const priceValue = parseFloat(values[columnIndex]);
+              
+              if (!isNaN(priceValue) && priceValue >= 0) {
+                newPrices.push({
+                  asset_symbol: symbol,
+                  asset_name: asset.name,
+                  asset_id: asset.id,
+                  round_number: round,
+                  price: priceValue
+                });
+              }
+            }
+          });
+        }
+        
+        // Update prices if we have valid data
+        if (newPrices.length > 0) {
+          setAssetPrices(newPrices);
+          alert(`Successfully imported ${newPrices.length} price points from CSV.`);
+        } else {
+          alert('No valid price data found in the CSV. Please check the format and try again.');
+        }
+        
+      } catch (error) {
+        console.error('Error parsing CSV:', error);
+        alert('Error parsing CSV file. Please check the format and try again.');
+      }
+    };
+    
+    reader.onerror = () => {
+      alert('Error reading the CSV file.');
+    };
+    
+    reader.readAsText(file);
+    
+    // Reset the file input so the same file can be selected again
+    e.target.value = null;
+  };
+  
   // Submit the form
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -447,9 +577,42 @@ export default function CreateScenario() {
           {/* Asset Prices */}
           {scenario.wallet_id && (
             <div className="card" style={{ marginTop: 'var(--spacing-md)', marginBottom: 'var(--spacing-md)', backgroundColor: 'var(--color-light)' }}>
-              <h3 style={{ margin: 0, marginBottom: 'var(--spacing-md)', fontSize: '1.1rem' }}>
-                Asset Prices by Round
-              </h3>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-md)' }}>
+                <h3 style={{ margin: 0, fontSize: '1.1rem' }}>
+                  Asset Prices by Round
+                </h3>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <button 
+                    type="button" 
+                    className="button" 
+                    style={{ padding: '3px 8px', fontSize: '0.8rem', backgroundColor: 'var(--color-info)' }}
+                    onClick={() => generateCsvTemplate()}
+                    disabled={!scenario.wallet_id || walletAssets.length === 0}
+                  >
+                    Export Template CSV
+                  </button>
+                  <label 
+                    className="button" 
+                    style={{ 
+                      padding: '3px 8px', 
+                      fontSize: '0.8rem', 
+                      backgroundColor: 'var(--color-primary)',
+                      margin: 0, 
+                      display: 'inline-block',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Import CSV
+                    <input
+                      type="file"
+                      accept=".csv"
+                      style={{ display: 'none' }}
+                      onChange={handleCsvImport}
+                      disabled={!scenario.wallet_id || walletAssets.length === 0}
+                    />
+                  </label>
+                </div>
+              </div>
               
               {walletAssets.length === 0 ? (
                 <p>No assets found in the selected wallet.</p>
@@ -517,6 +680,26 @@ export default function CreateScenario() {
                   </table>
                 </div>
               )}
+            </div>
+          )}
+          
+          {/* CSV Import Help Section */}
+          {scenario.wallet_id && walletAssets.length > 0 && (
+            <div style={{ 
+              marginTop: 'var(--spacing-md)', 
+              padding: 'var(--spacing-sm)',
+              backgroundColor: 'var(--color-info-light)',
+              borderRadius: 'var(--border-radius)',
+              fontSize: '0.9rem'
+            }}>
+              <h4 style={{ margin: '0 0 5px 0' }}>CSV Template Format</h4>
+              <p style={{ margin: '0 0 5px 0' }}>The CSV template should have the following format:</p>
+              <ul style={{ margin: '0 0 5px 0', paddingLeft: '20px' }}>
+                <li>First column titled "Round" with values like "Round 1", "Round 2", etc.</li>
+                <li>Asset columns with headers formatted as "SYMBOL (Name)"</li>
+                <li>Price values should be numeric (e.g., 45000 or 45000.50)</li>
+              </ul>
+              <p style={{ margin: '0' }}>You can export a template with the current values using the "Export Template CSV" button.</p>
             </div>
           )}
           

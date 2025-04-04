@@ -87,6 +87,44 @@ export default function ViewScenario() {
       : <span style={{...style, backgroundColor: 'var(--color-gray)'}}>Inactive</span>;
   }
   
+  // Download asset price data as CSV
+  const downloadCsvData = () => {
+    if (assetPrices.length === 0) return;
+    
+    // Get unique asset symbols
+    const assetSymbols = [...new Set(assetPrices.map(p => p.asset_symbol))];
+    
+    // Create CSV header
+    let csvContent = "Round," + assetSymbols.map(symbol => {
+      const assetName = assetPrices.find(p => p.asset_symbol === symbol)?.asset_name || symbol;
+      return `${symbol} (${assetName})`;
+    }).join(",") + "\n";
+    
+    // Add rows for each round
+    for (let round = 1; round <= scenario.rounds; round++) {
+      let row = [`Round ${round}`];
+      
+      assetSymbols.forEach(symbol => {
+        const price = assetPrices.find(
+          p => p.asset_symbol === symbol && p.round_number === round
+        )?.price || '-';
+        row.push(typeof price === 'number' ? price : '');
+      });
+      
+      csvContent += row.join(",") + "\n";
+    }
+    
+    // Create download link
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `scenario_prices_${scenario.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+  
   if (loading) {
     return (
       <Layout title="View Scenario">
@@ -168,7 +206,21 @@ export default function ViewScenario() {
         
         {/* Asset Prices by Round */}
         <div className="card" style={{ marginBottom: 'var(--spacing-md)', backgroundColor: 'var(--color-light)' }}>
-          <h2>Asset Prices by Round</h2>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-md)' }}>
+            <h2 style={{ margin: 0 }}>Asset Prices by Round</h2>
+            <button 
+              onClick={downloadCsvData} 
+              className="button" 
+              style={{ 
+                padding: '3px 10px', 
+                fontSize: '0.9rem', 
+                backgroundColor: 'var(--color-info)'
+              }}
+              disabled={assetPrices.length === 0}
+            >
+              Download CSV
+            </button>
+          </div>
           
           {assetPrices.length === 0 ? (
             <p>No asset prices defined for this scenario.</p>
