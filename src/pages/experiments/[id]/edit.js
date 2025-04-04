@@ -176,18 +176,45 @@ export default function EditExperiment() {
       
       // 2. Add new assignments for selected groups
       if (selectedGroups.length > 0) {
-        const groupAssignments = selectedGroups.map(group => ({
-          experiment_id: id,
-          group_id: group.id,
-          is_control_group: group.is_control_group,
-          is_active: true
-        }));
-        
-        const { error: assignmentError } = await supabase
+        // First check if assignments already exist (but are inactive)
+        const { data: existingAssignments, error: checkError } = await supabase
           .from('experiment_group_assignments')
-          .insert(groupAssignments);
+          .select('group_id')
+          .eq('experiment_id', id);
         
-        if (assignmentError) throw assignmentError;
+        if (checkError) throw checkError;
+        
+        // Create sets for faster lookups
+        const existingGroupIds = new Set(existingAssignments.map(a => a.group_id));
+        
+        // Process each group
+        for (const group of selectedGroups) {
+          if (existingGroupIds.has(group.id)) {
+            // Update existing assignment
+            const { error: updateError } = await supabase
+              .from('experiment_group_assignments')
+              .update({ 
+                is_control_group: group.is_control_group,
+                is_active: true
+              })
+              .eq('experiment_id', id)
+              .eq('group_id', group.id);
+              
+            if (updateError) throw updateError;
+          } else {
+            // Create new assignment
+            const { error: insertError } = await supabase
+              .from('experiment_group_assignments')
+              .insert({
+                experiment_id: id,
+                group_id: group.id,
+                is_control_group: group.is_control_group,
+                is_active: true
+              });
+              
+            if (insertError) throw insertError;
+          }
+        }
       }
       
       // Stay on the page but show success message

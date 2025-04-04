@@ -346,18 +346,43 @@ export default function CreateExperiment() {
       
       // Create group assignments if groups are selected
       if (selectedGroups.length > 0) {
-        const groupAssignments = selectedGroups.map(group => ({
-          experiment_id: experimentId,
-          group_id: group.id,
-          is_control_group: group.is_control_group,
-          is_active: true
-        }));
-        
-        const { error: assignmentError } = await supabase
-          .from('experiment_group_assignments')
-          .insert(groupAssignments);
-        
-        if (assignmentError) throw assignmentError;
+        // Process each group individually to handle potential conflicts
+        for (const group of selectedGroups) {
+          // Check if this assignment already exists (should be rare for new experiments)
+          const { data: existingAssignment, error: checkError } = await supabase
+            .from('experiment_group_assignments')
+            .select('id')
+            .eq('experiment_id', experimentId)
+            .eq('group_id', group.id)
+            .maybeSingle();
+            
+          if (checkError) throw checkError;
+          
+          if (existingAssignment) {
+            // Update existing assignment
+            const { error: updateError } = await supabase
+              .from('experiment_group_assignments')
+              .update({ 
+                is_control_group: group.is_control_group,
+                is_active: true
+              })
+              .eq('id', existingAssignment.id);
+              
+            if (updateError) throw updateError;
+          } else {
+            // Create new assignment
+            const { error: insertError } = await supabase
+              .from('experiment_group_assignments')
+              .insert({
+                experiment_id: experimentId,
+                group_id: group.id,
+                is_control_group: group.is_control_group,
+                is_active: true
+              });
+              
+            if (insertError) throw insertError;
+          }
+        }
       }
       
       // Create default sections
